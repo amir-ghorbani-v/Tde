@@ -1,0 +1,195 @@
+#log		20250130-Equilibrium.lammpslog
+
+# ---------- Initialize Simulation --------------------- 
+clear 
+units metal 
+dimension 3 
+boundary p p p 
+atom_style atomic 
+atom_modify map array
+
+# ---------- Create Atoms --------------------- 
+lattice         custom 3.234		&
+		a1 1.005372385084055 0.0 0.0	&
+		a2 0.0 1.7413562502206767 0.0	& 
+		a3 0.0 0.0 1.6281690032327805	&
+		basis 0.0 0.0 0.0	&
+		basis 0.5 0.5 0.0	&
+		basis 0.5 0.1667 0.5	&
+		basis 0.0 0.6667 0.5
+region		box block 0 16  0 14  0 12
+create_box	1 box
+create_atoms	1 region box
+
+replicate 1 1 1
+
+# ---------- Define Interatomic Potential --------------------- 
+pair_style	eam/alloy
+pair_coeff	* * /home/veshand/Zr/PotentialBank/Eam/M3.eampot Zr
+
+#pair_style	hybrid/overlay tabgap eam/alloy
+#pair_coeff	* * tabgap	/home/veshand/Zr/PotentialBank/Eam/tabGAP/2/Zr.tabgap Zr no yes
+#pair_coeff	* * eam/alloy	/home/veshand/Zr/PotentialBank/Eam/tabGAP/2/Zr.eam3.fs Zr
+
+
+neighbor 2.0 bin 
+neigh_modify delay 10 check yes 
+ 
+# ---------- Compute --------------------- 
+compute		EnergyKin		all ke
+compute		EnergyKinAtom		all ke/atom
+compute		EnergyKinAtomAve	all reduce ave c_EnergyKinAtom
+
+compute		EnergyPot		all pe
+compute		EnergyPotAtom		all pe/atom
+compute		EnergyPotAtomAve	all reduce ave c_EnergyPotAtom
+compute		EnergyPotAtomSum	all reduce sum c_EnergyPotAtom 
+
+variable	LatticeParameter	equal 3.234
+variable	NeighborCutoff		equal ${LatticeParameter}*1.2
+compute		ComputeNeighbor		all coord/atom cutoff ${NeighborCutoff}
+compute		ComputeNeighborReduce	all reduce sum c_ComputeNeighbor
+
+compute		ComputePropertyLocal	all property/local patom1 patom2
+compute		ComputePair		all pair/local dist
+compute		ComputePairReduceMin	all reduce min c_ComputePair
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomBefore 
+print		${EnergyTotAtom}
+
+#------------------------------Thermo-------------------------
+thermo_style	custom step temp press vol density c_EnergyPot c_EnergyKin etotal c_EnergyPotAtomAve  c_EnergyKinAtomAve v_EnergyTotAtom
+thermo			1 
+
+#------------------------------Dump-------------------------
+#dump			1 all custom 1 *.dump id type x y z c_EnergyPotAtom
+
+# ---------- Run Minimization --------------------- 
+reset_timestep		0 
+fix			1 all box/relax iso 0.0 vmax 0.001
+
+min_style		cg 
+minimize		1e-20 1e-20 100000 100000 # 1e-50 1e-50 1000000 1000000 
+
+#------------------------------Dump-------------------------
+write_dump	all custom 20250130-Equilibrium.dump id type x y z vx vy vz c_EnergyPotAtom
+write_restart	20250130-Equilibrium.restart
+write_data	20250130-Equilibrium.data
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal c_EnergyPot+c_EnergyKin
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomAfter 
+print		${EnergyTotAtom}
+
+
+#------------------------------Restore-------------------------
+#unfix 1
+
+# ---------- Calculate Distance ---------------------
+# Calculate the distance between atoms with ID 1 and ID 5
+#group atom1 id 0
+#group atom5 id 4
+#compute dist1 atom1 property/atom x y z
+#compute dist5 atom5 property/atom x y z
+#compute 1 all property/local patom1 patom2
+#compute 2 all pair/local dist eng force
+#dump 1 all local 1 tmp.dump index c_1[1] c_1[2] c_2[1] c_2[2] c_2[3]
+#variable dist equal sqrt((c_dist1[1]-c_dist5[1])^2+(c_dist1[2]-c_dist5[2])^2+(c_dist1[3]-c_dist5[3])^2)
+#print "${dist}"
+
+variable AX equal x[8]
+variable AY equal y[8]
+variable AZ equal z[8]
+
+variable BX equal x[12]
+variable BY equal y[12]
+variable BZ equal z[12]
+
+variable dist equal sqrt((v_AX-v_BX)^2+(v_AY-v_BY)^2+(v_AZ-v_BZ)^2)
+
+#------------------------------Run-------------------------
+run		0
+
+#------------------------------Info Record-------------------------
+variable N equal count(all)
+variable No equal $N
+
+variable E equal "c_EnergyPotAtomSum"
+variable Eo equal $E
+
+variable PXX equal pxx
+variable PXXo equal v_PXX 
+
+variable PYY equal pyy
+variable PYYo equal v_PYY
+
+variable PZZ equal pzz
+variable PZZo equal v_PZZ
+
+#print "Pxx = ${PXX}"
+#print "Pyy = ${PYY}"
+#print "Pzz = ${PZZ}"
+
+variable natoms equal count(all) 
+variable teng equal c_EnergyPotAtomSum
+variable length equal lx
+variable ecoh equal v_teng/v_natoms
+
+print "Total energy (eV) = ${teng}"
+print "Number of atoms = ${natoms}"
+print "Lattice constant (Angstoms) = ${dist}"
+print "Cohesive energy (eV) = ${ecoh}"
+
+variable Volume equal vol
+variable Mass equal mass(all)
+variable Density equal ${Mass}/${Volume}
+#variable K equal -(v_PXX+v_PYY+v_PZZ)/3 # bulk modulus K
+#variable SoundSpeed equal sqrt(${K}/${Density}) # Speed of sound c = sqrt(K/Density)
+
+print "Volume = ${Volume} A^3"
+print "Mass = ${Mass} grams/mole"
+print "Density = ${Density} g/cm^3"
+#print "bulk modulus = ${K} bars"
+#print "Sound Speed = ${SoundSpeed} m/s"
+
+
+fix			EquilibrationFix all print 1 "M2R,1.005372385084055,1.7413562502206767,1.6281690032327805,${teng},${natoms},${dist},${ecoh},${PXXo},${PYYo},${PZZo},${Volume},${Mass},${Density}" screen no title "Potential,A1X,A2Y,A3Z,TotalEnergy,NumberOfAtoms,LatticeConstant,CohesiveEnergy,PressureX,PressureY,PressureZ,Volume,Mass,Density" file 20250130-Equilibrium.csv
+
+#------------------------------Run-------------------------
+run			0
+
+#------------------------------Restore-------------------------
+unfix			EquilibrationFix 
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal c_EnergyPot+c_EnergyKin
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomAfter 
+print		${EnergyTotAtom}
+
+#****************************************************************************
+#FinishingReport
+#****************************************************************************
+print "~~~~~~~~~~FinishingReport"
+
+
+print "All done!"
