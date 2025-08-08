@@ -1,0 +1,310 @@
+LAMMPS (2 Aug 2023 - Update 3)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+# ---------- Sed ---------------------
+# EperimentNo: 1
+
+# ---------- Initialize Simulation ---------------------
+units metal
+dimension 3
+boundary p p p
+atom_style atomic
+atom_modify map array
+
+# ---------- Create Atoms ---------------------
+#box tilt large
+read_data        ../../../20250211-Thermalization.data
+Reading data file ...
+  orthogonal box = (0.14089167 0.21354806 0.58561495) to (51.881097 78.628098 62.600368)
+  2 by 5 by 4 MPI processor grid
+  reading atoms ...
+  10752 atoms
+  reading velocities ...
+  10752 velocities
+  read_data CPU = 0.264 seconds
+mass            * 91.22
+
+# ---------- Define Interatomic Potential ---------------------
+pair_style	eam/alloy
+pair_coeff	* * /home/veshand/Zr/PotentialBank/Eam/M3.eampot Zr
+#pair_coeff	* * D:/Queens_University/Project/Zr/PotentialBank/Eam/M2R.eampot Zr
+
+#pair_style	hybrid/overlay tabgap eam/alloy
+#pair_coeff	* * tabgap /home/veshand/Zr/PotentialBank/Eam/tabGAP/1/Zr.tabgap Zr no yes
+#pair_coeff	* * eam/alloy /home/veshand/Zr/PotentialBank/Eam/M3.eampot Zr
+
+# ---------- Computes ---------------------
+compute		EnergyKin		all ke
+compute		EnergyKinAtom		all ke/atom
+compute		EnergyKinAtomAve	all reduce ave c_EnergyKinAtom
+
+compute		EnergyPot		all pe
+compute		EnergyPotAtom		all pe/atom
+compute		EnergyPotAtomAve	all reduce ave c_EnergyPotAtom
+
+compute		ComputeNeighbor		all coord/atom cutoff 3.0
+compute		ComputeNeighborReduce	all reduce sum c_ComputeNeighbor
+
+compute		ComputePropertyLocal	all property/local patom1 patom2
+compute		ComputePair		all pair/local dist
+compute		ComputePairReduceMin	all reduce min c_ComputePair
+#------------------------------Export-------------------------
+write_data	20250130-Tde-Thermalization.data
+System init for write_data ...
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 9.6
+  ghost atom cutoff = 9.6
+  binsize = 4.8, bins = 11 17 13
+  4 neighbor lists, perpetual/occasional/extra = 1 3 0
+  (1) pair eam/alloy, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d
+      bin: standard
+  (2) compute coord/atom, occasional
+      attributes: full, newton on
+      pair build: full/bin/atomonly
+      stencil: full/bin/3d
+      bin: standard
+  (3) compute property/local, occasional, copy from (1)
+      attributes: half, newton on
+      pair build: copy
+      stencil: none
+      bin: none
+  (4) compute pair/local, occasional, copy from (1)
+      attributes: half, newton on
+      pair build: copy
+      stencil: none
+      bin: none
+
+#------------------------------Pka-------------------------
+
+variable	v1 equal 0
+variable	v2 equal 0
+variable	v3 equal 98.63950060000000000000
+
+variable	N equal count(all)
+#variable	R equal round(random(1,${N},191))
+variable	R equal 1
+
+group		PKA id == ${R}
+group		PKA id == 1
+1 atoms in group PKA
+
+velocity	PKA set ${v1} ${v2} ${v3}  units box
+velocity	PKA set 0 ${v2} ${v3}  units box
+velocity	PKA set 0 0 ${v3}  units box
+velocity	PKA set 0 0 98.6395006  units box
+
+#------------------------------Ensemble:LangevianCrust-------------------------
+#variable	T equal 10
+
+#variable	Xmin equal xlo
+#variable	Xmax equal xhi
+#variable	Ymin equal ylo
+#variable	Ymax equal yhi
+#variable	Zmin equal zlo
+#variable	Zmax equal zhi
+
+#variable	Crust equal 2
+#variable	CrustXmin equal v_Xmin+v_Crust
+#variable	CrustXmax equal v_Xmax-v_Crust
+#variable	CrustYmin equal v_Ymin+v_Crust
+#variable	CrustYmax equal v_Ymax-v_Crust
+#variable	CrustZmin equal v_Zmin+v_Crust
+#variable	CrustZmax equal v_Zmax-v_Crust
+
+#region		RegionInterior block ${CrustXmin} ${CrustXmax} ${CrustYmin} ${CrustYmax} ${CrustZmin} ${CrustZmax}
+#region		RegionExterior block ${CrustXmin} ${CrustXmax} ${CrustYmin} ${CrustYmax} ${CrustZmin} ${CrustZmax} side out
+
+#group GroupInterior region RegionInterior
+#group GroupExterior region RegionExterior
+
+#fix 1 GroupInterior nve
+#fix 2 GroupExterior nve
+#fix 3 GroupExterior langevin ${T} ${T} 0.1 12345 zero yes
+#fix 4 all dt/reset 1 0.000001 0.001 0.007
+
+#------------------------------Ensemble:Nve-------------------------
+fix		Thermal	all	nve
+fix		ThermalReset	all	dt/reset	1 0.000001 0.001 0.007
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+Per MPI rank memory allocation (min/avg/max) = 4.206 | 4.211 | 4.217 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press     
+         0   43.056535     -71322.448      0             -71262.613      193.10704    
+Loop time of 1.94085e-05 on 40 procs for 0 steps with 10752 atoms
+
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+variable	No equal 10752
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+variable	EnergyTotAtom equal -71262.6132910215/${No}
+variable	EnergyTotAtom equal -71262.6132910215/10752
+print		EnergyPerAtomBefore
+EnergyPerAtomBefore
+print		${EnergyTotAtom}
+print		-6.62784721828697
+-6.62784721828697
+
+#------------------------------Thermo-------------------------
+variable	ThermoStep equal 100
+thermo_style	custom step temp press vol density c_EnergyPot c_EnergyKin etotal  c_EnergyPotAtomAve  c_EnergyKinAtomAve v_EnergyTotAtom c_ComputeNeighborReduce c_ComputePairReduceMin
+thermo_modify	flush yes
+thermo		${ThermoStep}
+thermo		100
+
+#------------------------------Dump-------------------------
+run		0 post no
+Per MPI rank memory allocation (min/avg/max) = 4.206 | 4.211 | 4.217 Mbytes
+   Step          Temp          Press          Volume        Density      c_EnergyPot    c_EnergyKin       TotEng     c_EnergyPotAtomAve c_EnergyKinAtomAve v_EnergyTotAtom c_ComputeNeighborReduce c_ComputePairReduceMin
+         0   43.056535      193.10704      251605.32      6.473328      -71322.448      59.834626     -71262.613     -6.6334122      0.0055649764  -6.6278472      0              3.1224191    
+Loop time of 1.43629e-05 on 40 procs for 0 steps with 10752 atoms
+
+
+variable	NNdist atom "c_ComputeNeighbor > 1"
+group		HasNeighbor dynamic all var NNdist every 1
+dynamic group HasNeighbor defined
+
+#dump		DumpCustom all custom 100 *.dump id x y z c_EnergyPotAtom c_EnergyKinAtom c_ComputeNeighbor
+#dump		DumpLocal all local 100 *.report index c_ComputePropertyLocal[1] c_ComputePropertyLocal[2] c_ComputePair
+
+#------------------------------Report-------------------------
+variable	NoOfNeighbors equal c_ComputeNeighborReduce/2
+
+variable	MinDist equal c_ComputePairReduceMin
+variable	MinDistF format MinDist "%.4f"
+
+variable	Time equal time
+variable	TimeF format Time "%.4f"
+
+variable	EnergyKinetic		equal	c_EnergyKin
+variable	EnergyKineticF		format	EnergyKinetic "%.4f"
+variable	EnergyPotential		equal	c_EnergyPot
+variable	EnergyPotentialF	format	EnergyPotential "%.4f"
+variable	EnergyTotal		equal	etotal
+variable	EnergyTotalF		format	EnergyTotal "%.4f"
+variable	EnergyTotAtomF		format	EnergyTotAtom "%.4f"
+
+variable	ReportStep equal ${ThermoStep}/10
+variable	ReportStep equal 100/10
+fix		FixReport all print ${ReportStep} "$(step),${TimeF},$(temp),$(press),$(vol),${EnergyKinetic},${EnergyPotential},${EnergyTotal},${EnergyTotAtomF},${NoOfNeighbors},${MinDistF}" screen no title "Step,Time,Temp,Pressure,Volume,EnergyKinetic,EnergyPotential,EnergyTotal,EnergyTotalPerAtom,NoOfNeighbors,MinDist"  file 20250130-Tde.csv
+fix		FixReport all print 10 "$(step),${TimeF},$(temp),$(press),$(vol),${EnergyKinetic},${EnergyPotential},${EnergyTotal},${EnergyTotAtomF},${NoOfNeighbors},${MinDistF}" screen no title "Step,Time,Temp,Pressure,Volume,EnergyKinetic,EnergyPotential,EnergyTotal,EnergyTotalPerAtom,NoOfNeighbors,MinDist"  file 20250130-Tde.csv
+#------------------------------Run-------------------------
+run 4000
+Per MPI rank memory allocation (min/avg/max) = 5.042 | 5.052 | 5.126 Mbytes
+   Step          Temp          Press          Volume        Density      c_EnergyPot    c_EnergyKin       TotEng     c_EnergyPotAtomAve c_EnergyKinAtomAve v_EnergyTotAtom c_ComputeNeighborReduce c_ComputePairReduceMin
+         0   43.056535      193.10704      251605.32      6.473328      -71322.448      59.834626     -71262.613     -6.6334122      0.0055649764  -6.6278472      0              3.1224191    
+       100   41.972608      204.52321      251605.32      6.473328      -71320.942      58.328319     -71262.613     -6.6332721      0.0054248809  -6.6278472      6              2.6323364    
+       200   36.957616      333.67747      251605.32      6.473328      -71313.972      51.359106     -71262.613     -6.6326239      0.0047767025  -6.6278472      6              2.2042105    
+       300   30.889387      385.52983      251605.32      6.473328      -71305.539      42.926234     -71262.613     -6.6318396      0.0039923953  -6.6278472      6              2.044286     
+       400   38.000911      324.50912      251605.32      6.473328      -71315.423      52.808946     -71262.614     -6.6327588      0.0049115464  -6.6278472      32             2.3236354    
+       500   31.289148      329.67535      251605.32      6.473328      -71306.095      43.481772     -71262.613     -6.6318913      0.0040440636  -6.6278472      36             1.9372974    
+       600   30.388829      479.86302      251605.32      6.473328      -71304.844      42.230621     -71262.613     -6.6317749      0.0039276991  -6.6278472      32             2.2811531    
+       700   28.536404      404.67392      251605.32      6.473328      -71302.27       39.656351     -71262.613     -6.6315355      0.0036882767  -6.6278472      72             2.1927235    
+       800   26.829451      320.02754      251605.32      6.473328      -71299.898      37.28424      -71262.614     -6.6313149      0.0034676562  -6.6278472      104            2.4119029    
+       900   21.435536      317.12864      251605.32      6.473328      -71292.402      29.788446     -71262.614     -6.6306178      0.0027705028  -6.6278472      122            2.4158421    
+      1000   19.199708      352.76823      251605.32      6.473328      -71289.295      26.68137      -71262.614     -6.6303288      0.0024815262  -6.6278472      240            2.5370548    
+      1100   19.225658      162.80362      251605.32      6.473328      -71289.331      26.717433     -71262.614     -6.6303321      0.0024848803  -6.6278472      220            2.6687966    
+      1200   24.037639      86.613985      251605.32      6.473328      -71296.018      33.404526     -71262.614     -6.6309541      0.0031068197  -6.6278472      98             2.5619787    
+      1300   26.443322      147.59622      251605.32      6.473328      -71299.361      36.747645     -71262.613     -6.631265       0.0034177498  -6.6278472      72             2.2603867    
+      1400   25.280957      80.370962      251605.32      6.473328      -71297.746      35.132335     -71262.614     -6.6311148      0.0032675162  -6.6278472      130            2.4436048    
+      1500   26.040213      91.130107      251605.32      6.473328      -71298.801      36.187455     -71262.614     -6.6312129      0.0033656487  -6.6278472      136            2.3449327    
+      1600   25.669244      94.77518       251605.32      6.473328      -71298.286      35.671928     -71262.614     -6.631165       0.0033177016  -6.6278472      100            2.3305646    
+      1700   24.826454      73.791341      251605.32      6.473328      -71297.114      34.500723     -71262.614     -6.631056       0.0032087726  -6.6278472      102            2.4020583    
+      1800   25.382815      23.666919      251605.32      6.473328      -71297.888      35.273885     -71262.614     -6.6311279      0.0032806813  -6.6278472      120            2.6187606    
+      1900   24.1599        12.210296      251605.32      6.473328      -71296.188      33.574429     -71262.614     -6.6309699      0.0031226217  -6.6278472      152            2.7224029    
+      2000   24.504125     -12.729247      251605.32      6.473328      -71296.667      34.05279      -71262.614     -6.6310144      0.0031671121  -6.6278472      102            2.6205449    
+      2100   24.093257     -36.905747      251605.32      6.473328      -71296.095      33.481816     -71262.614     -6.6309613      0.0031140082  -6.6278472      100            2.5940445    
+      2200   25.284214     -46.887955      251605.32      6.473328      -71297.751      35.13686      -71262.614     -6.6311152      0.0032679372  -6.6278472      62             2.4892935    
+      2300   24.013271     -75.407091      251605.32      6.473328      -71295.984      33.370662     -71262.614     -6.6309509      0.0031036702  -6.6278472      68             2.4150715    
+      2400   24.604055     -64.897968      251605.32      6.473328      -71296.805      34.19166      -71262.614     -6.6310273      0.0031800279  -6.6278472      56             2.7177796    
+      2500   25.205387     -98.755201      251605.32      6.473328      -71297.641      35.027316     -71262.614     -6.631105       0.0032577489  -6.6278472      48             2.5682874    
+      2600   24.859873     -113.14216      251605.32      6.473328      -71297.161      34.547164     -71262.614     -6.6310604      0.0032130919  -6.6278472      42             2.5721511    
+      2700   24.929835     -127.26615      251605.32      6.473328      -71297.258      34.644389     -71262.614     -6.6310694      0.0032221343  -6.6278472      40             2.5248991    
+      2800   24.989708     -124.17552      251605.32      6.473328      -71297.341      34.727594     -71262.614     -6.6310771      0.0032298729  -6.6278472      34             2.5194287    
+      2900   24.816043     -126.03772      251605.32      6.473328      -71297.1        34.486255     -71262.614     -6.6310547      0.003207427   -6.6278472      38             2.4961274    
+      3000   24.844651     -127.30897      251605.32      6.473328      -71297.14       34.52601      -71262.614     -6.6310584      0.0032111245  -6.6278472      30             2.5202306    
+      3100   24.532616     -146.906        251605.32      6.473328      -71296.706      34.092383     -71262.614     -6.6310181      0.0031707946  -6.6278472      26             2.5297554    
+      3200   24.877081     -136.26611      251605.32      6.473328      -71297.185      34.571078     -71262.614     -6.6310626      0.0032153161  -6.6278472      38             2.5388095    
+      3300   25.085491     -137.73259      251605.32      6.473328      -71297.474      34.8607       -71262.614     -6.6310895      0.0032422526  -6.6278472      26             2.5913608    
+      3400   24.699551     -142.78849      251605.32      6.473328      -71296.938      34.324369     -71262.614     -6.6310396      0.0031923706  -6.6278472      36             2.5214767    
+      3500   24.813273     -133.32728      251605.32      6.473328      -71297.096      34.482406     -71262.614     -6.6310543      0.003207069   -6.6278472      30             2.574441     
+      3600   24.853111     -140.03668      251605.32      6.473328      -71297.152      34.537767     -71262.614     -6.6310595      0.0032122179  -6.6278472      30             2.6137066    
+      3700   24.521602     -149.40384      251605.32      6.473328      -71296.691      34.077078     -71262.614     -6.6310166      0.0031693711  -6.6278472      30             2.5644601    
+      3800   25.161104     -136.72364      251605.32      6.473328      -71297.58       34.965778     -71262.614     -6.6310993      0.0032520255  -6.6278472      24             2.5901752    
+      3900   25.101638     -138.38851      251605.32      6.473328      -71297.497      34.88314      -71262.614     -6.6310916      0.0032443396  -6.6278472      36             2.4899391    
+      4000   25.266913     -135.95998      251605.32      6.473328      -71297.727      35.112819     -71262.614     -6.631113       0.0032657011  -6.6278472      32             2.5340642    
+Loop time of 6.58184 on 40 procs for 4000 steps with 10752 atoms
+
+Performance: 52.508 ns/day, 0.457 hours/ns, 607.732 timesteps/s, 6.534 Matom-step/s
+97.5% CPU use with 40 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 3.9734     | 4.1166     | 4.4018     |   5.9 | 62.55
+Neigh   | 0.0098536  | 0.010352   | 0.011603   |   0.4 |  0.16
+Comm    | 0.53103    | 0.73538    | 0.94589    |  14.3 | 11.17
+Output  | 0.044656   | 0.044987   | 0.045812   |   0.1 |  0.68
+Modify  | 1.3789     | 1.5771     | 1.8407     |  11.7 | 23.96
+Other   |            | 0.09744    |            |       |  1.48
+
+Nlocal:          268.8 ave         299 max         248 min
+Histogram: 3 5 8 6 10 1 1 1 2 3
+Nghost:        1973.65 ave        2094 max        1837 min
+Histogram: 3 4 1 0 6 13 5 1 2 5
+Neighs:          19637 ave       22092 max       18171 min
+Histogram: 6 7 3 6 9 3 1 2 2 1
+FullNghs:      39274.1 ave       43662 max       36324 min
+Histogram: 3 5 8 6 9 2 1 1 2 3
+
+Total # of neighbors = 1570964
+Ave neighs/atom = 146.109
+Neighbor list builds = 13
+Dangerous builds = 0
+
+#------------------------------Export-------------------------
+write_data	20250130-Tde.data
+System init for write_data ...
+write_dump	all custom 20250130-Tde.dump id type x y z vx vy vz c_EnergyKinAtom c_EnergyPotAtom c_ComputeNeighbor
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+Per MPI rank memory allocation (min/avg/max) = 5.045 | 5.073 | 5.129 Mbytes
+   Step          Temp          Press          Volume        Density      c_EnergyPot    c_EnergyKin       TotEng     c_EnergyPotAtomAve c_EnergyKinAtomAve v_EnergyTotAtom c_ComputeNeighborReduce c_ComputePairReduceMin
+      4000   25.266913     -135.95998      251605.32      6.473328      -71297.727      35.112819     -71262.614     -6.631113       0.0032657011  -6.6278472      32             2.5340642    
+Loop time of 2.40877e-05 on 40 procs for 0 steps with 10752 atoms
+
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+variable	No equal 10752
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+variable	EnergyTotAtom equal -71262.6138592405/${No}
+variable	EnergyTotAtom equal -71262.6138592405/10752
+print		EnergyPerAtomAfter
+EnergyPerAtomAfter
+print		${EnergyTotAtom}
+print		-6.62784727113472
+-6.62784727113472
+
+
+#****************************************************************************
+#FinishingReport
+#****************************************************************************
+print "~~~~~~~~~~FinishingReport"
+~~~~~~~~~~FinishingReport
+
+
+print "All done!"
+All done!
+Total wall time: 0:00:08

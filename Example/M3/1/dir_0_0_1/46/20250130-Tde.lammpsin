@@ -1,0 +1,160 @@
+# ---------- Sed --------------------- 
+# EperimentNo: 1
+
+# ---------- Initialize Simulation --------------------- 
+units metal
+dimension 3
+boundary p p p
+atom_style atomic
+atom_modify map array
+
+# ---------- Create Atoms --------------------- 
+#box tilt large
+read_data        ../../../20250211-Thermalization.data
+mass            * 91.22
+
+# ---------- Define Interatomic Potential --------------------- 
+pair_style	eam/alloy
+pair_coeff	* * /home/veshand/Zr/PotentialBank/Eam/M3.eampot Zr
+#pair_coeff	* * D:/Queens_University/Project/Zr/PotentialBank/Eam/M2R.eampot Zr
+
+#pair_style	hybrid/overlay tabgap eam/alloy
+#pair_coeff	* * tabgap /home/veshand/Zr/PotentialBank/Eam/tabGAP/1/Zr.tabgap Zr no yes
+#pair_coeff	* * eam/alloy /home/veshand/Zr/PotentialBank/Eam/M3.eampot Zr
+
+# ---------- Computes --------------------- 
+compute		EnergyKin		all ke
+compute		EnergyKinAtom		all ke/atom
+compute		EnergyKinAtomAve	all reduce ave c_EnergyKinAtom
+
+compute		EnergyPot		all pe
+compute		EnergyPotAtom		all pe/atom
+compute		EnergyPotAtomAve	all reduce ave c_EnergyPotAtom
+
+compute		ComputeNeighbor		all coord/atom cutoff 3.0
+compute		ComputeNeighborReduce	all reduce sum c_ComputeNeighbor
+
+compute		ComputePropertyLocal	all property/local patom1 patom2
+compute		ComputePair		all pair/local dist
+compute		ComputePairReduceMin	all reduce min c_ComputePair
+#------------------------------Export-------------------------
+write_data	20250130-Tde-Thermalization.data
+
+#------------------------------Pka-------------------------
+
+variable	v1 equal 0
+variable	v2 equal 0
+variable	v3 equal 98.63950060000000000000
+
+variable	N equal count(all)
+#variable	R equal round(random(1,${N},191))
+variable	R equal 1
+
+group		PKA id == ${R}
+
+velocity	PKA set ${v1} ${v2} ${v3}  units box
+
+#------------------------------Ensemble:LangevianCrust-------------------------
+#variable	T equal 10
+
+#variable	Xmin equal xlo
+#variable	Xmax equal xhi
+#variable	Ymin equal ylo
+#variable	Ymax equal yhi
+#variable	Zmin equal zlo
+#variable	Zmax equal zhi
+
+#variable	Crust equal 2
+#variable	CrustXmin equal v_Xmin+v_Crust
+#variable	CrustXmax equal v_Xmax-v_Crust
+#variable	CrustYmin equal v_Ymin+v_Crust
+#variable	CrustYmax equal v_Ymax-v_Crust
+#variable	CrustZmin equal v_Zmin+v_Crust
+#variable	CrustZmax equal v_Zmax-v_Crust
+
+#region		RegionInterior block ${CrustXmin} ${CrustXmax} ${CrustYmin} ${CrustYmax} ${CrustZmin} ${CrustZmax}
+#region		RegionExterior block ${CrustXmin} ${CrustXmax} ${CrustYmin} ${CrustYmax} ${CrustZmin} ${CrustZmax} side out
+
+#group GroupInterior region RegionInterior
+#group GroupExterior region RegionExterior
+
+#fix 1 GroupInterior nve
+#fix 2 GroupExterior nve
+#fix 3 GroupExterior langevin ${T} ${T} 0.1 12345 zero yes
+#fix 4 all dt/reset 1 0.000001 0.001 0.007
+
+#------------------------------Ensemble:Nve-------------------------
+fix		Thermal	all	nve
+fix		ThermalReset	all	dt/reset	1 0.000001 0.001 0.007
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomBefore 
+print		${EnergyTotAtom}
+
+#------------------------------Thermo-------------------------
+variable	ThermoStep equal 100
+thermo_style	custom step temp press vol density c_EnergyPot c_EnergyKin etotal  c_EnergyPotAtomAve  c_EnergyKinAtomAve v_EnergyTotAtom c_ComputeNeighborReduce c_ComputePairReduceMin
+thermo_modify	flush yes 
+thermo		${ThermoStep} 
+
+#------------------------------Dump-------------------------
+run		0 post no
+
+variable	NNdist atom "c_ComputeNeighbor > 1"
+group		HasNeighbor dynamic all var NNdist every 1
+
+#dump		DumpCustom all custom 100 *.dump id x y z c_EnergyPotAtom c_EnergyKinAtom c_ComputeNeighbor
+#dump		DumpLocal all local 100 *.report index c_ComputePropertyLocal[1] c_ComputePropertyLocal[2] c_ComputePair
+
+#------------------------------Report-------------------------
+variable	NoOfNeighbors equal c_ComputeNeighborReduce/2
+
+variable	MinDist equal c_ComputePairReduceMin
+variable	MinDistF format MinDist "%.4f"
+
+variable	Time equal time
+variable	TimeF format Time "%.4f"
+
+variable	EnergyKinetic		equal	c_EnergyKin
+variable	EnergyKineticF		format	EnergyKinetic "%.4f"
+variable	EnergyPotential		equal	c_EnergyPot
+variable	EnergyPotentialF	format	EnergyPotential "%.4f"
+variable	EnergyTotal		equal	etotal
+variable	EnergyTotalF		format	EnergyTotal "%.4f"
+variable	EnergyTotAtomF		format	EnergyTotAtom "%.4f"
+
+variable	ReportStep equal ${ThermoStep}/10
+fix		FixReport all print ${ReportStep} "$(step),${TimeF},$(temp),$(press),$(vol),${EnergyKinetic},${EnergyPotential},${EnergyTotal},${EnergyTotAtomF},${NoOfNeighbors},${MinDistF}" screen no title "Step,Time,Temp,Pressure,Volume,EnergyKinetic,EnergyPotential,EnergyTotal,EnergyTotalPerAtom,NoOfNeighbors,MinDist"  file 20250130-Tde.csv
+#------------------------------Run-------------------------
+run 4000
+
+#------------------------------Export-------------------------
+write_data	20250130-Tde.data
+write_dump	all custom 20250130-Tde.dump id type x y z vx vy vz c_EnergyKinAtom c_EnergyPotAtom c_ComputeNeighbor
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomAfter 
+print		${EnergyTotAtom}
+
+
+#****************************************************************************
+#FinishingReport
+#****************************************************************************
+print "~~~~~~~~~~FinishingReport"
+
+
+print "All done!"

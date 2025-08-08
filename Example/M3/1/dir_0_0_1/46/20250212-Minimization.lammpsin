@@ -1,0 +1,116 @@
+#log		20250130-Equilibrium.lammpslog
+
+# ---------- Initialize Simulation --------------------- 
+clear 
+units metal 
+dimension 3 
+boundary p p p 
+atom_style atomic 
+atom_modify map array
+
+# ---------- Create Atoms --------------------- 
+read_data	20250130-Tde.data
+mass		* 91.22
+
+# ---------- Define Interatomic Potential --------------------- 
+pair_style	eam/alloy
+pair_coeff	* * /home/veshand/Zr/PotentialBank/Eam/M3.eampot Zr
+#pair_coeff	* * D:/Queens_University/Project/Zr/PotentialBank/Eam/M2R.eampot Zr
+
+#pair_style	hybrid/overlay tabgap eam/alloy
+#pair_coeff	* * tabgap /home/veshand/Zr/PotentialBank/Eam/tabGAP/1/Zr.tabgap Zr no yes
+#pair_coeff	* * eam/alloy /home/veshand/Zr/PotentialBank/Eam/M3.eampot Zr
+ 
+# ---------- Computes --------------------- 
+compute		EnergyKin		all ke
+compute		EnergyKinAtom		all ke/atom
+compute		EnergyKinAtomAve	all reduce ave c_EnergyKinAtom
+
+compute		EnergyPot		all pe
+compute		EnergyPotAtom		all pe/atom
+compute		EnergyPotAtomAve	all reduce ave c_EnergyPotAtom
+
+compute		ComputeNeighbor		all coord/atom cutoff 3.0
+compute		ComputeNeighborReduce	all reduce sum c_ComputeNeighbor
+
+compute		ComputePropertyLocal	all property/local patom1 patom2
+compute		ComputePair		all pair/local dist
+compute		ComputePairReduceMin	all reduce min c_ComputePair
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomBefore 
+print		${EnergyTotAtom}
+
+#------------------------------Thermo-------------------------
+variable	ThermoStep equal 100
+thermo_style	custom step temp press vol density c_EnergyPot c_EnergyKin etotal  c_EnergyPotAtomAve  c_EnergyKinAtomAve v_EnergyTotAtom c_ComputeNeighborReduce c_ComputePairReduceMin
+thermo_modify	flush yes 
+thermo		${ThermoStep}
+
+#------------------------------Dump-------------------------
+#run		0 post no
+
+#variable	NNdist atom "c_ComputeNeighbor > 1"
+#group		HasNeighbor dynamic all var NNdist every 1
+
+variable	DumpStep equal ${ThermoStep}
+
+#dump		DumpCustom all custom ${DumpStep} *.dump id x y z vx vy vz c_EnergyKinAtom c_EnergyPotAtom c_ComputeNeighbor
+#dump		DumpLocal all local 100 *.report index c_ComputePropertyLocal[1] c_ComputePropertyLocal[2] c_ComputePair
+
+#------------------------------Report-------------------------
+variable	NoOfNeighbors equal c_ComputeNeighborReduce/2
+
+variable	MinDist equal c_ComputePairReduceMin
+variable	MinDistF format MinDist "%.4f"
+
+variable	Time equal time
+variable	TimeF format Time "%.4f"
+
+variable	EnergyKinetic		equal	c_EnergyKin
+variable	EnergyKineticF		format	EnergyKinetic "%.4f"
+variable	EnergyPotential		equal	c_EnergyPot
+variable	EnergyPotentialF	format	EnergyPotential "%.4f"
+variable	EnergyTotal		equal	etotal
+variable	EnergyTotalF		format	EnergyTotal "%.4f"
+variable	EnergyTotAtomF		format	EnergyTotAtom "%.4f"
+
+variable	ReportStep equal 1
+fix		FixReport all print ${ReportStep} "$(step),${TimeF},$(temp),$(press),$(vol),${EnergyKinetic},${EnergyPotential},${EnergyTotal},${EnergyTotAtomF},${NoOfNeighbors},${MinDistF}" screen no title "Step,Time,Temp,Pressure,Volume,EnergyKinetic,EnergyPotential,EnergyTotal,EnergyTotalPerAtom,NoOfNeighbors,MinDist" file 20250212-Minimization.csv
+
+# ---------- Run Minimization --------------------- 
+reset_timestep		0 
+#fix			1 all box/relax iso 0.0 vmax 0.001
+min_style		cg 
+minimize		1e-20 1e-20 100000 100000
+
+#------------------------------Export-------------------------
+write_data	20250212-Minimization.data
+write_dump	all custom 20250212-Minimization.dump id type x y z vx vy vz c_EnergyKinAtom c_EnergyPotAtom c_ComputeNeighbor
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomAfter 
+print		${EnergyTotAtom}
+
+
+#****************************************************************************
+#FinishingReport
+#****************************************************************************
+print "~~~~~~~~~~FinishingReport"
+
+
+print "All done!"

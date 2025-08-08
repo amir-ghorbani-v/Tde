@@ -1,0 +1,644 @@
+# <editor-fold desc="######################################## OPTIONS">
+#print("######################################## OPTIONS")
+# <editor-fold desc="**********  Library">
+#print("**********  Library")
+import os  # I/O operations
+import numpy as np
+import pandas as pd  # data process; python-version SQL
+import glob
+#from ase.calculators.eam import EAM
+import matplotlib.pyplot as plt  # visualization
+#import scipy
+#import scipy.constants as const
+#from scipy import stats
+#from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
+#from scipy import interpolate  # create spline from discrete points
+#from scipy.interpolate import InterpolatedUnivariateSpline as spline
+#from scipy.interpolate import CubicSpline
+#from scipy.misc import derivative
+import math
+#from ase.build import bulk
+import re
+from ovito.io import *
+from ovito.data import *
+from ovito.modifiers import *
+from ovito.pipeline import *
+import numpy as np
+from pathlib import PurePath
+from pathlib import Path
+import tempfile
+# import seaborn as sns
+# import plotly.graph_objs as go
+# import bezier
+# from Bezier import Bezier
+# pd.options.mode.chained_assignment = None  # default='warn'
+# from sklearn.neighbors import KernelDensity
+# from sklearn.utils.fixes import parse_version
+# </editor-fold>
+
+# <editor-fold desc="**********  Variables">
+#print("**********  Variables")
+Date = "20240723"
+# Directory = os.getcwd()
+# Directory = DestinationDirectory
+# Directory = Directory_V
+DumpType = "MinimizedDump"
+# DumpRangeStart = DumpRangeStart_V
+# DumpRangeFinish = DumpRangeFinish_V
+DumpRangeStart = 0
+DumpRangeFinish = 222001
+# FolderAddress = os.getcwd()
+FolderAddress = ""
+CurrentDirectory = os.getcwd()
+# DirectionName = int(os.path.basename(CurrentDirectory))
+# EnergyName = int(os.path.basename(os.path.dirname(CurrentDirectory)))
+# PotentialName = str(os.path.basename(os.path.dirname(os.path.dirname(CurrentDirectory))))
+# CascadeDirectory = str(os.path.abspath(os.path.join(CurrentDirectory, "../../..")))
+# </editor-fold>
+
+# <editor-fold desc="**********  Functions">
+#print("********** Functions")
+
+# <editor-fold desc="OvitoClusterSize">
+def OvitoClusterSize(frame, data):
+    #Get the cluster size list data table
+    cluster_sizes = data.tables['clusters'].y
+    #Create a new particle property Cluster size
+    cluster_size_pp = data.particles_.create_property("ClusterSize", data=cluster_sizes[data.particles["Cluster"] - 1])
+# </editor-fold>
+
+# <editor-fold desc="OvitoClusterTime">
+def OvitoClusterTime(frame: int, data: DataCollection):
+    #Add time value as additional column to  data table "cluster list"
+    data.tables["clusters_"].create_property("Time", dtype=float, components=1)
+    data.tables["clusters_"]["Time"][...] = data.attributes["Time"]
+# </editor-fold>
+
+# <editor-fold desc="OvitoWsTime">
+def OvitoWsTime(frame: int, data: DataCollection):
+    #Add time value as additional column to  pipeline"
+    data.attributes["Time"]
+# </editor-fold>
+
+# <editor-fold desc="OvitoTypeReplacer">
+def OvitoTypeReplacer(frame: int, data: DataCollection):
+    original = data.clone()
+    ParticleTypes = data.particles_.particle_types_
+    ParticleOccupancies = original.particles['Occupancy']
+    ParticleTypes[:] = ParticleOccupancies
+
+
+    #Now add the new type id and name to the types list of the "Particle Type" property
+    ParticleTypes.types.append(ParticleType(id=2, name="Sia"))
+    ParticleTypes.types.append(ParticleType(id=0, name="Vacancy"))
+    # Check types
+    # for type in ParticleTypes.types:
+    #     print(type.id, type.name)
+# </editor-fold>
+
+# <editor-fold desc="ClusterFinder">
+def ClusterFinder(DumpFileAddress_V, WriteOvitoDump_V = False, ClusterAnalysis_V = True):
+    DumpFileName = Path(DumpFileAddress_V).stem
+
+    pipeline = import_file(DumpFileAddress_V,columns=["id", "type", "Position.x", "Position.y", "Position.z", "c_peng", "c_keng", "c_eng"])
+
+    pipeline.modifiers.append(CreateBondsModifier(cutoff=3.2))
+    pipeline.modifiers.append(CommonNeighborAnalysisModifier(mode=CommonNeighborAnalysisModifier.Mode.AdaptiveCutoff))
+    pipeline.modifiers.append(ExpressionSelectionModifier(expression='StructureType==2'))
+    pipeline.modifiers.append(DeleteSelectedModifier())
+    pipeline.modifiers.append(ClusterAnalysisModifier(
+        neighbor_mode=ClusterAnalysisModifier.NeighborMode.Bonding,
+        cutoff=3.2,
+        sort_by_size=True,
+        compute_com=True,
+        compute_gyration=True,
+        cluster_coloring=True))
+
+    pipeline.modifiers.append(OvitoClusterSize)
+    pipeline.modifiers.append(ExpressionSelectionModifier(expression='ClusterSize < 4'))
+    pipeline.modifiers.append(DeleteSelectedModifier())
+
+    # Data = pipeline.compute()
+    # print(list(Data.particles.keys()))
+
+    if WriteOvitoDump_V:
+        # OutputFile = DumpFilePath + "/" + DumpFileName + ".OvitoDump"
+        OutputFileName = DumpFileName + ".OvitoDump"
+        export_file(pipeline, OutputFileName, "lammps/dump", columns=['id', 'type', 'Position.X', 'Position.Y', "Position.z", "c_peng", "c_keng", "c_eng", "Cluster"])
+
+# </editor-fold>
+
+# <editor-fold desc="ClusterAnalysisNoTime">
+def ClusterAnalysisNoTime(Path_V, WriteWs_V = True, WriteClusterAnalysis_V = True):
+    PipeLineAdress = Path_V + "" + "*.dump"
+    # print("PipeLineAdress is: " + PipeLineAdress)
+    PipeLine = import_file(PipeLineAdress, multiple_frames=True)
+    # Returns number of frames
+    PipeLineFramesCount = PipeLine.source.num_frames
+    print("PipeLineFramesCount is:" + str(PipeLineFramesCount))
+
+    # Perform Wigner-Seitz analysis
+    ws = WignerSeitzAnalysisModifier(per_type_occupancies=True, eliminate_cell_deformation=True)
+
+
+    PipeLine.modifiers.append(ws)
+    select = SelectExpressionModifier(expression="Occupancy==1")
+    PipeLine.modifiers.append(select)
+    PipeLine.modifiers.append(DeleteSelectedModifier())
+    PipeLine.modifiers.append(InvertSelectionModifier())
+
+
+    ExportFileName = Date + "-FpCl.OvitoDataFp"
+
+    export_file(PipeLine, ExportFileName, "txt",
+                columns=['Frame',
+                         'Timestep',
+                         'WignerSeitz.interstitial_count',
+                         "WignerSeitz.vacancy_count"],
+                multiple_frames=True)
+
+    ExportAddress = Path_V + "" + ExportFileName
+    FpDf = pd.read_csv(ExportAddress,header=None,skiprows=1,
+                       dtype={"Frame": np.int32,
+                              "Timestep": np.int32,
+                              "WignerSeitz.interstitial_count": np.int32,
+                              "WignerSeitz.vacancy_count": np.int32},
+                       delimiter=" ", names=["Frame", "Timestep", "SIA", "Vacancy"],index_col=False)
+
+    FpDf.reset_index(drop=True)
+
+    ReadAddress = Path().resolve()
+    print("ReadAddress is: " + str(ReadAddress))
+    print(ReadAddress)
+    ReadAddressPure = PurePath(ReadAddress)
+    # print("ReadAddressPure is: " + str(ReadAddressPure))
+    ReadAddressPureParts = ReadAddressPure.parts
+
+    Direction = ReadAddressPureParts[-1]
+    FpDf ["Direction"] = Direction
+    print(Direction)
+    Potential = ReadAddressPureParts[-2]
+    print(Potential)
+    FpDf ["Potential"] = Potential
+    Energy = ReadAddressPureParts[-3]
+    print(Energy)
+    FpDf ["Energy"] = Energy
+    print(FpDf)
+    FpDf.to_csv(Date + "-FpDf.csv", index=False)
+
+    PipeLine.modifiers.append(CreateBondsModifier(cutoff=3.8))
+    PipeLine.modifiers.append(ClusterAnalysisModifier(
+        neighbor_mode=ClusterAnalysisModifier.NeighborMode.Bonding,
+        cutoff=3.8,
+        sort_by_size=True,
+        compute_com=True,
+        compute_gyration=True,
+        cluster_coloring=True))
+
+
+    # Perform Cluster Size Analysis
+    PipeLine.modifiers.append(OvitoClusterSize)
+    PipeLine.modifiers.append(ExpressionSelectionModifier(expression='ClusterSize < 4'))
+    PipeLine.modifiers.append(DeleteSelectedModifier())
+
+
+    ExportFileName = Date + "-FpCl.OvitoDataCl"
+    export_file(PipeLine, ExportFileName, 'txt/table', key='clusters', multiple_frames=True)
+
+    ClDf = []
+    for frame in range(PipeLineFramesCount):
+        data = PipeLine.compute(frame)
+        # print(data)
+        ExportFileName = str(frame) + ".OvitoDataCl"
+        export_file(data, ExportFileName, 'txt/table', key='clusters', multiple_frames=False)
+
+
+        ClDfNew = pd.read_csv(ExportFileName, header=None, skiprows=2,
+                           dtype={"Cluster Identifier": np.int32,
+                                  "Cluster Size": np.int32,
+                                  "Center of Mass.X": np.float64,
+                                  "Center of Mass.Y": np.float64,
+                                  "Center of Mass.Z": np.float64,
+                                  "Radius of Gyration": np.float64,
+                                  "Gyration Tensor.XX": np.float64,
+                                  "Gyration Tensor.YY": np.float64,
+                                  "Gyration Tensor.ZZ": np.float64,
+                                  "Gyration Tensor.XY": np.float64,
+                                  "Gyration Tensor.XZ": np.float64,
+                                  "Gyration Tensor.YZ": np.float64},
+                           delimiter=" ", names=["Cluster Identifier",
+                                                 "Cluster Size",
+                                                 "Center of Mass.X",
+                                                 "Center of Mass.Y",
+                                                 "Center of Mass.Z",
+                                                 "Radius of Gyration",
+                                                 "Gyration Tensor.XX",
+                                                 "Gyration Tensor.YY",
+                                                 "Gyration Tensor.ZZ",
+                                                 "Gyration Tensor.XY",
+                                                 "Gyration Tensor.XZ",
+                                                 "Gyration Tensor.YZ"], index_col=False)
+        ClDfNew["Frame"] = frame
+        ClDf.append(ClDfNew)
+    ClDf = pd.concat(ClDf)
+    ClDf["Direction"] = Direction
+    ClDf["Potential"] = Potential
+    ClDf["Energy"] = Energy
+    print(ClDf)
+    ClDf.to_csv(Date + "-ClDf.csv", index=False)
+
+
+
+    return FpDf, ClDf
+
+# </editor-fold>
+
+# <editor-fold desc="TimeReader">
+def TimeReader(DumpRangeStart_V,DumpRangeFinish_V):
+    TimeNumpy = np.zeros((0,3))
+    Frame = 0
+    for DumpFileNumber in range(DumpRangeStart_V,DumpRangeFinish_V):
+        try:
+            DumpFileName = str(DumpFileNumber) + ".dump"
+            File = open(DumpFileName)
+            # print("DumpFileName is: " + str(DumpFileName))
+            Lines = File.readlines()
+            Time = float(Lines[3])
+            print(Time)
+            NewRow = np.array([[Frame, DumpFileNumber,Time]])
+            TimeNumpy = np.append(TimeNumpy,NewRow, axis=0)
+            Frame += 1
+
+        except:
+            continue
+    print(TimeNumpy)
+    TimeDf = pd.DataFrame(TimeNumpy, columns=["Frame","Timestep","Time"])
+    print(TimeDf)
+    TimeDf.to_csv("20211019-TimeDf.csv", index=False)
+    return TimeDf
+
+# </editor-fold>
+
+# <editor-fold desc="FpClAnalyser">
+def FpClAnalyser(Path_V,DumpType_V = "MinimizedDump", FpAnalysis_V = False,ClusterAnalysis_V = False,WriteOvitoDump_V = False,WriteClusterData_V = False, CLusterType_V = "Sia",
+                 RemoveCrust_V=False,RemoveCrustDimX_V=0,RemoveCrustDimY_V=0,RemoveCrustDimZ_V=0,RemoveCrustDist_V=0,RemoveCrustWidth_V=0):
+    PipeLineAdress = Path_V + "" + "*." + DumpType_V
+    # print("PipeLineAdress is: " + PipeLineAdress)
+    DumpFileName = Path(PipeLineAdress).stem
+    # print("DumpFileName is:")
+    # print(DumpFileName)
+    ReadAddress = Path().resolve()
+    # print("ReadAddress is:")
+    # print(ReadAddress)
+    ReadAddressPure = PurePath(ReadAddress)
+    #print("ReadAddressPure is:" + str(ReadAddressPure))
+    #print(ReadAddressPure)
+    ReadAddressPureParts = ReadAddressPure.parts
+    Potential = ReadAddressPureParts[-3]
+    #print("Potential is:")
+    #print(Potential)
+    Energy = ReadAddressPureParts[-2]
+    #print("Energy is:")
+    #print(Energy)
+    Direction = ReadAddressPureParts[-1]
+    #print("Direction is:")
+    #print(Direction)
+    print(str(Potential) + "," + str(Energy) + "," + str(Direction))
+
+    # Importing Dump Files
+    PipeLine = import_file(PipeLineAdress, multiple_frames=True)
+    if DumpType_V == "dump":
+        PipeLine.modifiers.append(OvitoWsTime)
+
+    # Returns number of frames
+    PipeLineFramesCount = PipeLine.source.num_frames
+    print("PipeLineFramesCount is:" + str(PipeLineFramesCount))
+
+    # Perform Wigner-Seitz analysis
+    if FpAnalysis_V:
+        print("Wigner-Seitz analysis")
+
+        # WS analysis
+        ws = WignerSeitzAnalysisModifier(per_type_occupancies=True, eliminate_cell_deformation=True)
+        PipeLine.modifiers.append(ws)
+
+        # Delete based on Occupancy
+        # Here I deleted one atom type! a better solution is to look for cluster type rather than deleting one type. Look for this solution below
+
+        PipeLine.modifiers.append(ExpressionSelectionModifier(expression="Occupancy==1"))
+        PipeLine.modifiers.append(DeleteSelectedModifier())
+
+
+        if CLusterType_V == "Sia":
+            print("Only SIAs")
+            PipeLine.modifiers.append(ExpressionSelectionModifier(expression='Occupancy==0'))
+            PipeLine.modifiers.append(DeleteSelectedModifier())
+        elif CLusterType_V == "Vacancy":
+            print("Only Vacancies")
+            PipeLine.modifiers.append(ExpressionSelectionModifier(expression='Occupancy>1'))
+            PipeLine.modifiers.append(DeleteSelectedModifier())
+        PipeLine.modifiers.append(InvertSelectionModifier())
+
+        # # Change Type based on Occupancy
+        # PipeLine.modifiers.append(OvitoTypeReplacer)
+
+        # # Create Bonds
+        # bonds_mod = CreateBondsModifier(mode=CreateBondsModifier.Mode.Pairwise)
+        # bonds_mod.set_pairwise_cutoff(0, 2, 3.2)
+        # PipeLine.modifiers.append(bonds_mod)
+        # for frame in range(PipeLineFramesCount):
+        #     data = PipeLine.compute(frame)
+
+        # # Delete based on Bonds
+        # select = SelectExpressionModifier(expression="CreateBonds.num_bonds == 1")
+        # PipeLine.modifiers.append(select)
+        # PipeLine.modifiers.append(DeleteSelectedModifier())
+
+        if RemoveCrust_V:
+            # print("RemoveCrust")
+            PipeLine.modifiers.append(SliceModifier(normal=(RemoveCrustDimX_V, RemoveCrustDimY_V, RemoveCrustDimZ_V),
+                                                    distance=RemoveCrustDist_V, slab_width=RemoveCrustWidth_V,
+                                                    inverse=False
+                                                    ))
+
+        #Exporting
+        ExportFileName = Date + "-FpCl" + "-" + DumpType_V + "-" + CLusterType_V +".OvitoDataFp"
+
+        if DumpType_V == "dump":
+            export_file(PipeLine, ExportFileName, "txt/attr",
+                        columns=['Frame',
+                                 'Time',
+                                 'Timestep',
+                                 'WignerSeitz.interstitial_count',
+                                 "WignerSeitz.vacancy_count"],
+                        multiple_frames=True)
+        elif DumpType_V == "MinimizedDump":
+            export_file(PipeLine, ExportFileName, "txt/attr",
+                        columns=['Frame',
+                                 'Timestep',
+                                 'WignerSeitz.interstitial_count',
+                                 "WignerSeitz.vacancy_count"],
+                        multiple_frames=True)
+
+
+        ExportAddress = Path_V + "" + ExportFileName
+        if DumpType_V == "dump":
+            FpDf = pd.read_csv(ExportAddress,header=None,skiprows=1,
+                           dtype={"Frame": np.int32,
+                                  "Time": np.float64,
+                                  "Timestep": np.int32,
+                                  "WignerSeitz.interstitial_count": np.int32,
+                                  "WignerSeitz.vacancy_count": np.int32},
+                           delimiter=" ", names=["Frame", "Time", "Timestep", "SIA", "Vacancy"],index_col=False)
+        elif DumpType_V == "MinimizedDump":
+            FpDf = pd.read_csv(ExportAddress,header=None,skiprows=1,
+                           dtype={"Frame": np.int32,
+                                  "Timestep": np.int32,
+                                  "WignerSeitz.interstitial_count": np.int32,
+                                  "WignerSeitz.vacancy_count": np.int32},
+                           delimiter = " ", names = ["Frame", "Timestep", "SIA", "Vacancy"], index_col = False)
+
+        FpDf.reset_index(drop=True)
+        FpDf["Direction"] = Direction
+        FpDf["Potential"] = Potential
+        FpDf["Energy"] = Energy
+        # print("FpDf is:")
+        # print(FpDf)
+        FpDf.to_csv(Date + "-FpDf" + "-" + DumpType_V + "-" + CLusterType_V + ".csv", index=False)
+
+    # Perform Cluster Size Analysis
+    if ClusterAnalysis_V:
+        print("Cluster Size Analysis")
+        PipeLine.modifiers.append(CreateBondsModifier(cutoff=5.8))
+        PipeLine.modifiers.append(CommonNeighborAnalysisModifier(mode=CommonNeighborAnalysisModifier.Mode.AdaptiveCutoff))
+        # PipeLine.modifiers.append(ExpressionSelectionModifier(expression='StructureType==2'))
+        # PipeLine.modifiers.append(DeleteSelectedModifier())
+        ClusterAnalysis = ClusterAnalysisModifier(
+            neighbor_mode=ClusterAnalysisModifier.NeighborMode.Bonding,
+            cutoff=5.8,
+            sort_by_size=True,
+            compute_com=True,
+            compute_gyration=True,
+            cluster_coloring=True)
+
+        PipeLine.modifiers.append(ClusterAnalysis)
+
+        if DumpType_V == "dump":
+            PipeLine.modifiers.append(OvitoClusterTime)
+
+        PipeLine.modifiers.append(OvitoClusterSize)
+        # PipeLine.modifiers.append(ExpressionSelectionModifier(expression='ClusterSize < 4'))
+        # PipeLine.modifiers.append(DeleteSelectedModifier())
+
+        #if only you want to modify one type of cluster
+
+
+        ExportFileName = Date + "-FpCl" + "-" + DumpType_V + "-" +  CLusterType_V +".OvitoDataCl"
+        export_file(PipeLine, ExportFileName, 'txt/table', key='clusters', multiple_frames=True)
+
+        ClDf = []
+
+    if WriteOvitoDump_V:
+        for frame in range(PipeLineFramesCount):
+            DumpData = PipeLine.compute(frame)
+            OutputFileName = str(frame) + "-" + DumpType_V + "-" + CLusterType_V + ".OvitoDump"
+            if DumpType_V == "dump":
+                export_file(DumpData, OutputFileName, "lammps/dump",
+                            columns=["Particle Identifier", "Particle Type", "Position.x", "Position.y", "Position.z", "c_keng", "c_eng", "Occupancy", "Cluster"])
+            elif DumpType_V == "MinimizedDump":
+                export_file(DumpData, OutputFileName, "lammps/dump",
+                            columns=["Particle Identifier", "Particle Type", "Position.x", "Position.y", "Position.z", "Occupancy", "Cluster"])
+
+    if WriteClusterData_V:
+        for frame in range(PipeLineFramesCount):
+            TableData = PipeLine.compute(frame)
+            # print(data)
+
+            ExportFileName = str(frame) + "-" + DumpType_V + "-" + CLusterType_V + ".OvitoDataCl"
+
+            export_file(TableData, ExportFileName, 'txt/table', key='clusters', multiple_frames=False)
+
+            if DumpType_V == "dump":
+                ClDfNew = pd.read_csv(ExportFileName, header=None, skiprows=2,
+                                      dtype={"Cluster Identifier": np.int32,
+                                             "Cluster Size": np.int32,
+                                             "Center of Mass.X": np.float64,
+                                             "Center of Mass.Y": np.float64,
+                                             "Center of Mass.Z": np.float64,
+                                             "Radius of Gyration": np.float64,
+                                             "Gyration Tensor.XX": np.float64,
+                                             "Gyration Tensor.YY": np.float64,
+                                             "Gyration Tensor.ZZ": np.float64,
+                                             "Gyration Tensor.XY": np.float64,
+                                             "Gyration Tensor.XZ": np.float64,
+                                             "Gyration Tensor.YZ": np.float64,
+                                             "Time": np.float64},
+                                      delimiter=" ", names=["Cluster Identifier",
+                                                            "Cluster Size",
+                                                            "Center of Mass.X",
+                                                            "Center of Mass.Y",
+                                                            "Center of Mass.Z",
+                                                            "Radius of Gyration",
+                                                            "Gyration Tensor.XX",
+                                                            "Gyration Tensor.YY",
+                                                            "Gyration Tensor.ZZ",
+                                                            "Gyration Tensor.XY",
+                                                            "Gyration Tensor.XZ",
+                                                            "Gyration Tensor.YZ",
+                                                            "Time"],
+                                      index_col=False)
+
+            elif DumpType_V == "MinimizedDump":
+                ClDfNew = pd.read_csv(ExportFileName, header=None, skiprows=2,
+                                      dtype={"Cluster Identifier": np.int32,
+                                             "Cluster Size": np.int32,
+                                             "Center of Mass.X": np.float64,
+                                             "Center of Mass.Y": np.float64,
+                                             "Center of Mass.Z": np.float64,
+                                             "Radius of Gyration": np.float64,
+                                             "Gyration Tensor.XX": np.float64,
+                                             "Gyration Tensor.YY": np.float64,
+                                             "Gyration Tensor.ZZ": np.float64,
+                                             "Gyration Tensor.XY": np.float64,
+                                             "Gyration Tensor.XZ": np.float64,
+                                             "Gyration Tensor.YZ": np.float64},
+
+                                      delimiter=" ", names=["Cluster Identifier",
+                                                            "Cluster Size",
+                                                            "Center of Mass.X",
+                                                            "Center of Mass.Y",
+                                                            "Center of Mass.Z",
+                                                            "Radius of Gyration",
+                                                            "Gyration Tensor.XX",
+                                                            "Gyration Tensor.YY",
+                                                            "Gyration Tensor.ZZ",
+                                                            "Gyration Tensor.XY",
+                                                            "Gyration Tensor.XZ",
+                                                            "Gyration Tensor.YZ",
+                                                            ], index_col=False)
+
+            ClDfNew["Frame"] = frame
+            ClDf.append(ClDfNew)
+
+        ClDf = pd.concat(ClDf)
+        ClDf["Direction"] = Direction
+        ClDf["Potential"] = Potential
+        ClDf["Energy"] = Energy
+    # print("ClDf is:")
+    # print(ClDf)
+
+        ClDf.to_csv(Date + "-ClDf" + "-" + DumpType_V + "-" + CLusterType_V + ".csv", index=False)
+
+    return FpDf, ClDf
+
+# </editor-fold>
+
+# <editor-fold desc="DumpExplorerInfo">
+def DumpExplorerInfo(DumpFileAddress_V,DumpType_V):
+    # Create a temporary file
+    if DumpType_V == "dump":
+        LineRead = 14
+    elif DumpType_V == "MinimizedDump":
+        LineRead = 9
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
+        with open(DumpFileAddress_V, 'r') as File:
+            # Copy the first 10 lines to the temporary file
+            for i in range(LineRead):
+                line = File.readline()
+                temp_file.write(line)
+
+        # Seek to the beginning of the temporary file
+        temp_file.seek(0)
+
+        # Read and process the temporary file
+        for LineNumber, Line in enumerate(temp_file, start=1):
+            if "ITEM: TIMESTEP" in Line:
+                LineNumberTimestep = LineNumber + 1
+            elif "ITEM: TIME" in Line:
+                LineNumberTime = LineNumber + 1
+            elif "ITEM: NUMBER OF ATOMS" in Line:
+                LineNumberNumberOfAtoms = LineNumber + 1
+            elif "ITEM: BOX BOUNDS pp pp pp" in Line:
+                LineNumberBoxX = LineNumber + 1
+                LineNumberBoxY = LineNumber + 2
+                LineNumberBoxZ = LineNumber + 3
+            elif "ITEM: ATOMS" in Line:
+                LineNumberHeader = LineNumber
+                LineNumberAtoms = LineNumber + 1
+
+        temp_file.seek(0)
+        Lines = temp_file.readlines()
+
+        if DumpType_V == "dump":
+            LineRead = 14
+            Time = float(Lines[LineNumberTime - 1])
+        Timestep = int(Lines[LineNumberTimestep - 1])
+        NoOfAtoms = int(Lines[LineNumberNumberOfAtoms - 1])
+
+        BoxX = Lines[LineNumberBoxX - 1].split()
+        BoxXMin = float(BoxX[0])
+        BoxXMax = float(BoxX[1])
+
+        BoxY = Lines[LineNumberBoxY - 1].split()
+        BoxYMin = float(BoxY[0])
+        BoxYMax = float(BoxY[1])
+
+        BoxZ = Lines[LineNumberBoxZ - 1].split()
+        BoxZMin = float(BoxZ[0])
+        BoxZMax = float(BoxZ[1])
+
+    BoxDic = {"x": {"Min": BoxXMin, "Max": BoxXMax},
+              "y": {"Min": BoxYMin, "Max": BoxYMax},
+              "z": {"Min": BoxZMin, "Max": BoxZMax}}
+
+    Header = Lines[LineNumberHeader - 1].split()
+    HeaderList = Header[2:]
+
+    if DumpType_V == "dump":
+        Result = np.array([Time, Timestep, NoOfAtoms, BoxXMin, BoxXMax, BoxYMin, BoxYMax, BoxZMin, BoxZMax, BoxDic])
+        return Time, Timestep, NoOfAtoms, BoxXMin, BoxXMax, BoxYMin, BoxYMax, BoxZMin, BoxZMax, BoxDic, HeaderList
+    elif DumpType_V == "MinimizedDump":
+        Result = np.array([Timestep, NoOfAtoms, BoxXMin, BoxXMax, BoxYMin, BoxYMax, BoxZMin, BoxZMax, BoxDic])
+        return Timestep, NoOfAtoms, BoxXMin, BoxXMax, BoxYMin, BoxYMax, BoxZMin, BoxZMax, BoxDic, HeaderList
+
+
+# </editor-fold>
+
+# <editor-fold desc="FpChecker">
+import os
+
+def FpChecker(DumpFile,RefFile):
+    # PipeLine = import_file("20250130-Tde.dump", multiple_frames=True)
+    PipeLine = import_file(DumpFile, multiple_frames=False)
+
+    ws = WignerSeitzAnalysisModifier(per_type_occupancies=True, eliminate_cell_deformation=True)
+    RefPath = os.path.join("..", "..", "..", RefFile)
+    ws.reference = FileSource()
+    ws.reference.load(RefPath)
+
+    PipeLine.modifiers.append(ws)
+
+    # Apply the pipeline to compute the modifier output
+    data = PipeLine.compute()
+
+    # Extract occupancies from the computed data
+    # occupancies = data.particles['Occupancy']
+    # print(occupancies)
+    # total_occupancy = np.sum(occupancies, axis=0)
+    # print(total_occupancy)
+
+    CountSia = data.attributes["WignerSeitz.interstitial_count"]
+    # print("Interstitial count:", CountSia)
+
+    if CountSia>0:
+        return 1
+    else:
+        return 0
+
+# </editor-fold>
+
+# </editor-fold>
+
+# </editor-fold>
+
+print(FpChecker("20250130-Tde.dump","20250211-Thermalization.dump"))
