@@ -1,0 +1,53 @@
+#!/bin/bash
+#SBATCH --account=def-belandl1
+#SBATCH --ntasks=64			# number of MPI processes.
+#SBATCH --mem-per-cpu=1000M		# memory; default unit is megabytes.
+#SBATCH --time=0-23:59			# time (DD-HH:MM)
+#SBATCH -o 20250211-Thermalization.out
+
+####################_Start_##################
+echo __________Start__________
+#now=$(date +"%T")
+#echo "Start time : $now"
+
+####################_Python_####################
+#echo __________Python__________
+#module load StdEnv/2023 python/3.12.4 scipy-stack/2024a
+#source ~/VirEnv/20230920-VirEnv-PythonEph/bin/activate
+#python -VV 
+#PkaId=$(python3 20240524-PkaFinder.py)
+#sed -i 's/PkaIdTemp/'$PkaId'/g' 20240727-Cascade.lammpsin
+#deactivate
+#module --force purge
+
+####################_Modules_####################
+echo __________Modules__________
+module load StdEnv/2023  intel/2023.2.1  openmpi/4.1.5 lammps-omp/20230802
+
+#echo __________ModulesTabGap__________
+#module load nixpkgs/16.09  StdEnv/2020  intel/2020.1.217  openmpi/4.0.3 lammps-omp/20201029
+#module load hdf5-mpi/1.10.6 voro++/0.4.6 eigen/3.3.7
+#module load mlip/2.0 fftw-mpi/3.3.8 tbb/2020.2
+#module load python/3.10
+#pip install ase
+
+####################_Execution_##################
+echo __________Execution__________
+srun lmp -in 20250211-Thermalization.lammpsin -log 20250211-Thermalization.lammpslog
+
+#echo __________TabGap__________
+#srun /home/veshand/Software/Lammps-tabGAP/lmp4_CC -in 20250211-Thermalization.lammpsin -log 20250211-Thermalization.lammpslog
+
+####################_Report_##################
+echo __________Report__________
+scontrol show job $SLURM_JOB_ID
+
+####################_Finish_##################
+echo __________Finish__________
+#now=$(date +"%T")
+#echo "Finish time : $now"
+
+####################_Explaining_##################
+#--mem=0 requests for all the memory on a node
+#--mem-per-core=92G memory per cpu-core
+#--mem-per-cpu=8G memory per cpu-core
