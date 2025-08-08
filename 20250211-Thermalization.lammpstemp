@@ -1,0 +1,283 @@
+# ---------- Initialize Simulation --------------------- 
+units metal
+dimension 3
+boundary p p p
+atom_style atomic
+atom_modify map array
+
+variable	ThermoStep equal 1000
+# ---------- Create Atoms --------------------- 
+#box tilt large
+read_data	20250130-Equilibrium.data
+mass		* 91.22
+
+# ---------- Define Interatomic Potential --------------------- 
+pair_style	eam/alloy
+pair_coeff	* * /home/veshand/Zr/PotentialBank/Eam/PotentialTemp.eampot Zr
+#pair_coeff	* * D:/Queens_University/Project/Zr/PotentialBank/Eam/M2R.eampot Zr
+
+#pair_style	hybrid/overlay tabgap eam/alloy
+#pair_coeff	* * tabgap	/home/veshand/Zr/PotentialBank/Eam/tabGAP/2/Zr.tabgap Zr no yes
+#pair_coeff	* * eam/alloy	/home/veshand/Zr/PotentialBank/Eam/tabGAP/2/Zr.eam3.fs Zr
+
+# ---------- Computes --------------------- 
+compute		EnergyKin		all ke
+compute		EnergyKinAtom		all ke/atom
+compute		EnergyKinAtomAve	all reduce ave c_EnergyKinAtom
+
+compute		EnergyPot		all pe
+compute		EnergyPotAtom		all pe/atom
+compute		EnergyPotAtomAve	all reduce ave c_EnergyPotAtom
+
+variable	LatticeParameter	equal 3.234
+variable	NeighborCutoff		equal ${LatticeParameter}*1.2
+compute		ComputeNeighbor		all coord/atom cutoff ${NeighborCutoff}
+compute		ComputeNeighborReduce	all reduce sum c_ComputeNeighbor
+
+compute		ComputePropertyLocal	all property/local patom1 patom2
+compute		ComputePair		all pair/local dist
+compute		ComputePairReduceMin	all reduce min c_ComputePair
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomMin 
+print		${EnergyTotAtom}
+
+#------------------------------Report-------------------------
+variable	Time			equal	time
+variable	TimeF			format	Time "%.4f"
+variable	EnergyKinetic		equal	c_EnergyKin
+variable	EnergyKineticF		format	EnergyKinetic "%.4f"
+variable	EnergyPotential		equal	c_EnergyPot
+variable	EnergyPotentialF	format	EnergyPotential "%.4f"
+variable	EnergyTotal		equal	etotal
+variable	EnergyTotalF		format	EnergyTotal "%.4f"
+variable	EnergyTotAtomF		format	EnergyTotAtom "%.4f"
+
+variable	ReportStep equal ${ThermoStep}/10
+
+fix		FixReport all print ${ReportStep} "$(step),${TimeF},$(temp),$(press),$(vol),${EnergyKinetic},${EnergyPotential},${EnergyTotal},${EnergyTotAtomF}" screen no title "Step,Time,Temp,Pressure,Volume,EnergyKinetic,EnergyPotential,EnergyTotal,EnergyTotAtom"  file 20250211-Thermalization-Random.csv
+
+#------------------------------Thermo-------------------------
+thermo_style	custom step temp press vol density c_EnergyPot c_EnergyKin etotal c_EnergyPotAtomAve  c_EnergyKinAtomAve v_EnergyTotAtom
+thermo_modify	flush yes
+thermo		${ThermoStep} 
+
+#------------------------------Ensemble-------------------------
+variable	Tmin equal 1
+variable	Tmax equal 10
+variable	TmaxDouble equal ${Tmax}*2 # this will give a velocity averaged on 10k
+
+#fix		Thermal		all	npt		temp ${Tmin} ${Tmax} 2 aniso 0.0 0.0 100 #the pressure us unstable
+#fix		Heating		all	nvt		temp ${Tmin} ${Tmax} 5 # the ociliation is too much. the temperature does not converge on 10k
+velocity			all	create		${TmaxDouble} 12345 mom yes rot yes
+fix		Thermal		all	nve
+
+fix		ThermalReset	all	dt/reset	1 0.000001 0.001 0.007
+
+#------------------------------Run-------------------------
+run 100000
+
+#------------------------------Export-------------------------
+#write_data	20250211-Thermalization.data
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomRandom
+print		${EnergyTotAtom}
+
+#------------------------------Ensemble-------------------------
+unfix		Thermal
+unfix		ThermalReset
+variable	Tmin equal 10
+variable	Tmax equal 10
+
+fix		Thermal		all	nvt		temp ${Tmin} ${Tmax} 10
+
+fix		ThermalReset	all	dt/reset	1 0.000001 0.001 0.007
+
+#------------------------------Report-------------------------
+variable	Time			equal	time
+variable	TimeF			format	Time "%.4f"
+variable	EnergyKinetic		equal	c_EnergyKin
+variable	EnergyKineticF		format	EnergyKinetic "%.4f"
+variable	EnergyPotential		equal	c_EnergyPot
+variable	EnergyPotentialF	format	EnergyPotential "%.4f"
+variable	EnergyTotal		equal	etotal
+variable	EnergyTotalF		format	EnergyTotal "%.4f"
+variable	EnergyTotAtomF		format	EnergyTotAtom "%.4f"
+
+variable	ReportStep equal ${ThermoStep}/10
+
+fix		FixReport all print ${ReportStep} "$(step),${TimeF},$(temp),$(press),$(vol),${EnergyKinetic},${EnergyPotential},${EnergyTotal},${EnergyTotAtomF}" screen no title "Step,Time,Temp,Pressure,Volume,EnergyKinetic,EnergyPotential,EnergyTotal,EnergyTotAtom"  file 20250211-Thermalization-Nvt.csv
+
+#------------------------------Run-------------------------
+run 100000
+
+#------------------------------Export-------------------------
+#write_data	20250211-Thermalization.data
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomNvt
+print		${EnergyTotAtom}
+
+#------------------------------Ensemble-------------------------
+timestep	0.1
+unfix		Thermal
+unfix		ThermalReset
+variable	Tmin equal 10
+variable	Tmax equal 10
+variable	CurrentPressure equal press
+
+fix		Thermal			all	npt		temp ${Tmin} ${Tmax} 100 aniso ${CurrentPressure} 0 1000
+
+fix		ThermalReset		all	dt/reset	1 0.000001 0.001 0.007
+
+#------------------------------Report-------------------------
+unfix		FixReport
+variable	Time			equal	time
+variable	TimeF			format	Time "%.4f"
+variable	EnergyKinetic		equal	c_EnergyKin
+variable	EnergyKineticF		format	EnergyKinetic "%.4f"
+variable	EnergyPotential		equal	c_EnergyPot
+variable	EnergyPotentialF	format	EnergyPotential "%.4f"
+variable	EnergyTotal		equal	etotal
+variable	EnergyTotalF		format	EnergyTotal "%.4f"
+variable	EnergyTotAtomF		format	EnergyTotAtom "%.4f"
+
+variable	ReportStep equal ${ThermoStep}/10
+
+fix		FixReport all print ${ReportStep} "$(step),${TimeF},$(temp),$(press),$(vol),${EnergyKinetic},${EnergyPotential},${EnergyTotal},${EnergyTotAtomF}" screen no title "Step,Time,Temp,Pressure,Volume,EnergyKinetic,EnergyPotential,EnergyTotal,EnergyTotAtom"  file 20250211-Thermalization-Npt.csv
+
+#------------------------------Run-------------------------
+run 1000000
+
+#------------------------------Export-------------------------
+#write_data	20250211-Thermalization.data
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomNpt
+print		${EnergyTotAtom}
+
+#------------------------------Ensemble-------------------------
+unfix		Thermal
+unfix		ThermalReset
+variable	Tmin equal 10
+variable	Tmax equal 10
+
+fix		LangevianBath		all	langevin	${Tmin} ${Tmax} 100 699483
+fix		Thermal			all	nve
+
+fix		ThermalReset	all	dt/reset	1 0.000001 0.001 0.007
+
+#------------------------------Report-------------------------
+unfix		FixReport
+variable	Time			equal	time
+variable	TimeF			format	Time "%.4f"
+variable	EnergyKinetic		equal	c_EnergyKin
+variable	EnergyKineticF		format	EnergyKinetic "%.4f"
+variable	EnergyPotential		equal	c_EnergyPot
+variable	EnergyPotentialF	format	EnergyPotential "%.4f"
+variable	EnergyTotal		equal	etotal
+variable	EnergyTotalF		format	EnergyTotal "%.4f"
+variable	EnergyTotAtomF		format	EnergyTotAtom "%.4f"
+
+variable	ReportStep equal ${ThermoStep}/10
+
+fix		FixReport all print ${ReportStep} "$(step),${TimeF},$(temp),$(press),$(vol),${EnergyKinetic},${EnergyPotential},${EnergyTotal},${EnergyTotAtomF}" screen no title "Step,Time,Temp,Pressure,Volume,EnergyKinetic,EnergyPotential,EnergyTotal,EnergyTotAtom"  file 20250211-Thermalization-LangevianNve.csv
+
+#------------------------------Run-------------------------
+run 100000
+
+#------------------------------Export-------------------------
+#write_data	20250211-Thermalization.data
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomLangevianNve
+print		${EnergyTotAtom}
+
+#------------------------------Ensemble-------------------------
+unfix		LangevianBath
+unfix		Thermal
+unfix		ThermalReset
+variable	Tmin equal 10
+variable	Tmax equal 10
+
+fix		Thermal			all	nve
+
+fix		ThermalReset		all	dt/reset	1 0.000001 0.001 0.007
+
+#------------------------------Report-------------------------
+unfix		FixReport
+variable	Time			equal	time
+variable	TimeF			format	Time "%.4f"
+variable	EnergyKinetic		equal	c_EnergyKin
+variable	EnergyKineticF		format	EnergyKinetic "%.4f"
+variable	EnergyPotential		equal	c_EnergyPot
+variable	EnergyPotentialF	format	EnergyPotential "%.4f"
+variable	EnergyTotal		equal	etotal
+variable	EnergyTotalF		format	EnergyTotal "%.4f"
+variable	EnergyTotAtomF		format	EnergyTotAtom "%.4f"
+
+variable	ReportStep equal ${ThermoStep}/10
+
+fix		FixReport all print ${ReportStep} "$(step),${TimeF},$(temp),$(press),$(vol),${EnergyKinetic},${EnergyPotential},${EnergyTotal},${EnergyTotAtomF}" screen no title "Step,Time,Temp,Pressure,Volume,EnergyKinetic,EnergyPotential,EnergyTotal,EnergyTotAtom"  file 20250211-Thermalization-Nve.csv
+
+#------------------------------Run-------------------------
+run 20000
+
+#------------------------------Export-------------------------
+write_data	20250211-Thermalization.data
+write_dump	all custom 20250211-Thermalization.dump id type x y z vx vy vz c_EnergyKinAtom c_EnergyPotAtom c_ComputeNeighbor
+
+#------------------------------EnergyPerAtom-------------------------
+run		0 post no
+variable	EnergyTot equal pe+ke
+#print		${EnergyTot}
+variable	N equal count(all)
+variable	No equal $N
+#print		${No}
+variable	EnergyTotAtom equal ${EnergyTot}/${No}
+print		EnergyPerAtomNve
+print		${EnergyTotAtom}
+
+#****************************************************************************
+#FinishingReport
+#****************************************************************************
+print "~~~~~~~~~~FinishingReport"
+
+
+print "All done!" 
