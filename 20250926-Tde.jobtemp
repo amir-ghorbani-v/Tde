@@ -1,0 +1,273 @@
+#!/bin/bash
+AccountTemp
+TasksTemp
+MemPerCpuTemp
+TimeTemp
+#SBATCH -o 20250926-Tde.out
+#SBATCH --job-name=Tde-TemperatureTemp-PotentialTemp-TryTemp
+
+echo ####################_Start_##################
+echo __________Time__________
+start=$(date +%s)
+echo "Start time : $(date +"%T")"
+
+echo __________Job__________
+scontrol show job $SLURM_JOB_ID
+
+####################_Modules_####################
+#echo __________Purging__________
+#deactivate
+#module --force purge
+
+echo __________Lammps__________
+module load StdEnv/2023  intel/2023.2.1  openmpi/4.1.5 lammps-omp/20230802
+module load intel/2019u3  intelmpi/2019u3 lammps/29Mar2019 # for Niagara
+
+echo __________TabGap__________
+module load nixpkgs/16.09  StdEnv/2020  intel/2020.1.217  openmpi/4.0.3 lammps-omp/20201029
+module load hdf5-mpi/1.10.6 voro++/0.4.6 eigen/3.3.7
+module load mlip/2.0 fftw-mpi/3.3.8 tbb/2020.2
+
+echo __________Mtp__________
+module load StdEnv/2023
+#module load CCEnv
+
+echo __________Python__________
+module load python/3.11 qt/6.5.3 scipy-stack/2024a
+source ~/VirEnv/20250909-VirEnv-Python/bin/activate
+#pip install --upgrade pip
+#pip install numpy
+#pip install ase
+#pip install pandas
+#pip install matplotlib
+#pip install ovito==3.10.6
+
+echo __________Report__________
+which lmp
+#which lammps # for Niagara
+python -VV
+
+echo ############## Error Handler ##############
+ErrorFunc() {
+    local error_message=$1
+    echo "Error: $error_message"
+    cd "$(dirname "$PWD")" 2>/dev/null || true
+
+    if [ ! -f "$ErrorLog" ]; then
+        echo "Potential,Try,Direction,ErrorType" > "$ErrorLog"
+    fi
+    echo "MtpPd,1,$dir_name,$error_message" >> "$ErrorLog"
+
+    rm -rf "$dir_name"
+    scancel "$SLURM_JOB_ID"
+    exit 1
+}
+
+echo ############## Wall Time Tracker ##############
+WallTimeCheck() {
+    local buffer=600   # 10 minutes = 600 seconds
+    local now=$(date +%s)
+    local elapsed=$((now - start))
+
+    local walltime_sec
+    walltime_sec=$(squeue -j "$SLURM_JOB_ID" -h -o %l | \
+        awk -F '[:-]' '{ if (NF==4) {d=$1;h=$2;m=$3;s=$4} else {d=0;h=$1;m=$2;s=$3} ; print d*86400 + h*3600 + m*60 + s }')
+
+    local remaining=$((walltime_sec - elapsed))
+
+    if (( remaining <= buffer )); then
+        echo "Walltime nearly reached (= ${buffer}s left). Cleaning up $dir_name and exiting..."
+
+        cd "$(dirname "$PWD")" 2>/dev/null || true
+
+        if [ ! -f "$ErrorLog" ]; then
+            echo "Potential,Try,Direction,ErrorType" > "$ErrorLog"
+        fi
+        echo "MtpPd,1,$dir_name,WalltimeExceeded" >> "$ErrorLog"
+
+        rm -rf "$dir_name"
+        scancel "$SLURM_JOB_ID"
+        exit 2
+    fi
+}
+
+
+####################_Execution_##################
+# Directions, please check https://ssd.phys.strath.ac.uk/resources/crystallography/crystallographic-direction-calculator/ 
+
+directions=()
+PotentialsEam=("M2" "M3" "BMD192" "M2R" "M3R" "BMD192R")
+PotentialsTabGap=("TabGap1" "TabGap2")
+PotentialsMtp=("MtpPd")
+
+ErrorLog="20250926-Tde-Error.csv"
+DefectTestReport="20250926-Tde-Defect.csv"
+
+for direction in "${directions[@]}"
+	do
+		#sleep 2
+		IFS=" " read -ra components <<< "$direction"
+		dir_name="dir_${components[0]}_${components[1]}_${components[2]}"
+		#echo $$$
+		#echo Dir: "$dir_name"
+		#sleep 2
+		rm -rf "$dir_name"
+		mkdir "$dir_name"
+		cd "$dir_name"
+
+		Dt0Ws1=true
+		Dt1Ws0=true
+
+		for E in $(seq 0 2 200)
+			do
+				#echo #####
+				#echo Energy: "$E"
+				#sleep 2
+				mkdir $E || ErrorFunc "mkdir failed"
+				WallTimeCheck
+				cd $E
+
+				energy=$E
+				magnitude=$(echo "sqrt(${components[0]}^2 + ${components[1]}^2 + ${components[2]}^2)" | bc -l)
+				unit_vector_x=$(echo "${components[0]} / $magnitude" | bc -l)
+				unit_vector_y=$(echo "${components[1]} / $magnitude" | bc -l)
+				unit_vector_z=$(echo "${components[2]} / $magnitude" | bc -l)
+
+				signx=$(echo "${components[0]}" | awk '{if($1>=0) print 1; else print -1}')
+				signy=$(echo "${components[1]}" | awk '{if($1>=0) print 1; else print -1}')
+				signz=$(echo "${components[2]}" | awk '{if($1>=0) print 1; else print -1}')
+
+				energy_transform=$(echo "scale=4; 98.2269475*sqrt(2*$energy/91.22)" | bc )
+
+				energy_x=$(echo "$energy_transform * $unit_vector_x" | bc -l)
+				energy_y=$(echo "$energy_transform * $unit_vector_y" | bc -l)
+				energy_z=$(echo "$energy_transform * $unit_vector_z" | bc -l)
+
+				abs_x=$(echo "scale=4; if($energy_x < 0) -1 * $energy_x else $energy_x" | bc)
+				abs_y=$(echo "scale=4; if($energy_y < 0) -1 * $energy_y else $energy_y" | bc)
+				abs_z=$(echo "scale=4; if($energy_z < 0) -1 * $energy_z else $energy_z" | bc)
+
+				#__________________________________________________________
+
+				sed -e "s/TemperatureLammpsTemp/TemperatureTemp/g; s/PotentialLammpsTemp/PotentialTemp/g; s/TryLammpsTemp/TryTemp/g" ../../../../../20250926-Tde.lammpstemp > 20250130-Tde.lammpsin
+				sed -i 's/V1Temp/'$abs_x'/g; s/V2Temp/'$abs_y'/g; s/V3Temp/'$abs_z'/g' 20250926-Tde.lammpsin
+
+				if [[ " ${PotentialsEam[*]} " =~ " PotentialTemp " ]]; then
+				    #sed -i 's/^pair_style[[:space:]]\+eam\/alloy/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* PotentialBankTemp\/PotentialTemp.eampot Zr/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_style[[:space:]]\+hybrid\/overlay tabgap eam\/alloy/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* tabgap[[:space:]]\+PotentialBankTemp\/PotentialTemp.tabgap Zr no yes/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* eam\/alloy[[:space:]]\+PotentialBankTemp\/PotentialTemp.eam.fs Zr/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_style[[:space:]]\+mtp PotentialBankTemp\/PotentialTemp.pot/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^compute[[:space:]]\+ComputePropertyLocal[[:space:]]\+all property\/local patom1 patom2/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^compute[[:space:]]\+ComputePair[[:space:]]\+all pair\/local dist/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^compute[[:space:]]\+ComputePairReduceMin[[:space:]]\+all reduce min c_ComputePair/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^compute[[:space:]]\+ComputePairReduceMin[[:space:]]\+all pair mtp/#&/' 20250926-Tde.lammpsin
+				    sed -i "s|PotentialBankTemp|PotDirTemp|g" 20250926-Tde.lammpsin
+				    LmpEamTemp -in 20250926-Tde.lammpsin -log 20250926-Tde.lammpslog > /dev/null 2>&1
+
+				elif [[ " ${PotentialsTabGap[*]} " =~ " PotentialTemp " ]]; then
+				    sed -i 's/^pair_style[[:space:]]\+eam\/alloy/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* PotentialBankTemp\/PotentialTemp.eampot Zr/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^pair_style[[:space:]]\+hybrid\/overlay tabgap eam\/alloy/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* tabgap[[:space:]]\+PotentialBankTemp\/PotentialTemp.tabgap Zr no yes/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* eam\/alloy[[:space:]]\+PotentialBankTemp\/PotentialTemp.eam.fs Zr/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_style[[:space:]]\+mtp PotentialBankTemp\/PotentialTemp.pot/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^compute[[:space:]]\+ComputePropertyLocal[[:space:]]\+all property\/local patom1 patom2/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^compute[[:space:]]\+ComputePair[[:space:]]\+all pair\/local dist/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^compute[[:space:]]\+ComputePairReduceMin[[:space:]]\+all reduce min c_ComputePair/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^compute[[:space:]]\+ComputePairReduceMin[[:space:]]\+all pair mtp/#&/' 20250926-Tde.lammpsin
+				    sed -i "s|PotentialBankTemp|PotDirTemp|g" 20250926-Tde.lammpsin
+				    chmod +rwx /home/veshand/Software/Lammps-tabGAP/lmp4_CC
+				    LmpTapGapTemp -in 20250926-Tde.lammpsin -log 20250926-Tde.lammpslog > /dev/null 2>&1
+
+
+				elif [[ " ${PotentialsMtp[*]} " =~ " PotentialTemp " ]]; then
+				    sed -i 's/^pair_style[[:space:]]\+eam\/alloy/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* PotentialBankTemp\/PotentialTemp.eampot Zr/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_style[[:space:]]\+hybrid\/overlay tabgap eam\/alloy/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* tabgap[[:space:]]\+PotentialBankTemp\/PotentialTemp.tabgap Zr no yes/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* eam\/alloy[[:space:]]\+PotentialBankTemp\/PotentialTemp.eam.fs Zr/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^pair_style[[:space:]]\+mtp PotentialBankTemp\/PotentialTemp.pot/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^compute[[:space:]]\+ComputePropertyLocal[[:space:]]\+all property\/local patom1 patom2/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^compute[[:space:]]\+ComputePair[[:space:]]\+all pair\/local dist/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^compute[[:space:]]\+ComputePairReduceMin[[:space:]]\+all reduce min c_ComputePair/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^compute[[:space:]]\+ComputePairReduceMin[[:space:]]\+all pair mtp/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/c_ComputePairReduceMin/c_ComputePairReduceMin[1]/g' 20250926-Tde.lammpsin
+				    sed -i "s|PotentialBankTemp|PotDirTemp|g" 20250926-Tde.lammpsin
+				    LmpMptTemp -in 20250926-Tde.lammpsin -log 20250926-Tde.lammpslog > /dev/null 2>&1
+				fi
+
+				#__________________________________________________________
+
+				DefectDt=$(python3 ../../../../../20250926-Tde-Defect-Dt.py 2>&1) || {
+					echo "Error in Defect-Dt.py:"
+					echo "$DefectDt"
+					scancel $SLURM_JOB_ID
+					exit 1
+				}
+				#echo "The output of 20250926-Tde-Defect-Dt.py is: $DefectDt"
+
+                                sed -e 's/DumpFileTemp/20250926-Tde.dump/g; s/RefFileTemp/20250211-Thermalization.dump/g;' ../../../../../20250926-Tde-Defect-Ws.pytemp > 20250926-Tde-Defect-Ws.py
+
+				DefectWs=$(python3 20250926-Tde-Defect-Ws.py 2>&1) || {
+					echo "Error in Defect-Ws.py:"
+					echo "$DefectWs"
+					scancel $SLURM_JOB_ID
+					exit 1
+				}
+				#echo "The output of 20250926-Tde-Defect-Ws.py is: $DefectWs"
+				echo "$dir_name,$E,$DefectDt,$DefectWs"
+
+				[ -f "$DefectTestReport" ] && rm "$DefectTestReport"
+				echo "DefectDt,DefectWs" >> "$DefectTestReport"
+				echo "$DefectDt,$DefectWs" >> "$DefectTestReport"
+
+				if (( DefectDt == 1 && DefectWs == 1 )); then
+    					#echo "DefectDt=1-DefectWs=1->Stopping"
+					cd ..
+					break
+				elif (( DefectDt == 0 && DefectWs == 0 )); then
+					rm -rf 20250926-Tde-Thermalization.data
+					rm -rf 20250926-Tde.data
+					rm -rf 20250926-Tde.dump
+					rm -rf 20250926-Tde.lammpsin
+				elif (( DefectDt == 1 && DefectWs == 0 )); then
+                                        if $Dt1Ws0; then
+                                            Dt1Ws0=false
+                                        else
+					    rm -rf 20250926-Tde-Thermalization.data
+					    #rm -rf 20250926-Tde.data
+					    #rm -rf 20250926-Tde.dump
+					    rm -rf 20250926-Tde.lammpsin
+                                        fi
+				elif (( DefectDt == 0 && DefectWs == 1 )); then
+                                        if $Dt0Ws1; then
+                                            Dt0Ws1=false
+                                        else
+					    rm -rf 20250926-Tde-Thermalization.data
+					    #rm -rf 20250926-Tde.data
+					    #rm -rf 20250926-Tde.dump
+					    rm -rf 20250926-Tde.lammpsin
+                                        fi
+				fi
+				rm -rf 20250926-Tde-Defect-Ws.py
+
+				cd ..
+			done
+		cd ..
+	done
+cd ..
+
+echo ####################_Finish_##################
+echo __________Time__________
+end=$(date +%s)
+echo "Finish time : $(date +"%T")"
+
+echo __________Job__________
+seff $SLURM_JOB_ID
+
+echo __________Diff__________
+diff=$((end - start))
+echo "Elapsed time: ${diff} seconds"
+printf "Elapsed time: %02d:%02d:%02d\n" $((diff/3600)) $((diff%3600/60)) $((diff%60))
