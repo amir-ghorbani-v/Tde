@@ -15,13 +15,12 @@ mass            * 91.22
 
 # ---------- Define Interatomic Potential --------------------- 
 pair_style	eam/alloy
-pair_coeff	* * PotentialBankTemp/PotentialLammpsTemp.eampot Zr
+pair_coeff	* * PotentialBankTemp/PotentialLammpsTemp.pot Zr
 
 pair_style	hybrid/overlay tabgap eam/alloy
 pair_coeff	* * tabgap	PotentialBankTemp/PotentialLammpsTemp.tabgap Zr no yes
 pair_coeff	* * eam/alloy	PotentialBankTemp/PotentialLammpsTemp.eam.fs Zr
 
-pair_style	mtp PotentialBankTemp/PotentialLammpsTemp.pot
 pair_style	mtp PotentialBankTemp/PotentialLammpsTemp.pot
 
 # ---------- Computes --------------------- 
@@ -42,7 +41,7 @@ compute		ComputePairReduceMin	all reduce min c_ComputePair
 compute		ComputePairReduceMin	all pair mtp
 
 #------------------------------Export-------------------------
-write_data	20250130-Tde-Thermalization.data
+write_data	Tde-Thermalization.data
 
 #------------------------------Pka-------------------------
 

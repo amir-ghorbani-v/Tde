@@ -149,12 +149,12 @@ for direction in "${directions[@]}"
 
 				#__________________________________________________________
 
-				sed -e "s/TemperatureLammpsTemp/TemperatureTemp/g; s/PotentialLammpsTemp/PotentialTemp/g; s/TryLammpsTemp/TryTemp/g" ../../../../../20250926-Tde.lammpstemp > 20250130-Tde.lammpsin
+				sed -e "s/TemperatureLammpsTemp/TemperatureTemp/g; s/PotentialLammpsTemp/PotentialTemp/g; s/TryLammpsTemp/TryTemp/g" ../../../../../20250926-Tde.lammpstemp > 20250926-Tde.lammpsin
 				sed -i 's/V1Temp/'$abs_x'/g; s/V2Temp/'$abs_y'/g; s/V3Temp/'$abs_z'/g' 20250926-Tde.lammpsin
 
 				if [[ " ${PotentialsEam[*]} " =~ " PotentialTemp " ]]; then
 				    #sed -i 's/^pair_style[[:space:]]\+eam\/alloy/#&/' 20250926-Tde.lammpsin
-				    #sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* PotentialBankTemp\/PotentialTemp.eampot Zr/#&/' 20250926-Tde.lammpsin
+				    #sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* PotentialBankTemp\/PotentialTemp.pot Zr/#&/' 20250926-Tde.lammpsin
 				    sed -i 's/^pair_style[[:space:]]\+hybrid\/overlay tabgap eam\/alloy/#&/' 20250926-Tde.lammpsin
 				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* tabgap[[:space:]]\+PotentialBankTemp\/PotentialTemp.tabgap Zr no yes/#&/' 20250926-Tde.lammpsin
 				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* eam\/alloy[[:space:]]\+PotentialBankTemp\/PotentialTemp.eam.fs Zr/#&/' 20250926-Tde.lammpsin
@@ -164,11 +164,11 @@ for direction in "${directions[@]}"
 				    #sed -i 's/^compute[[:space:]]\+ComputePairReduceMin[[:space:]]\+all reduce min c_ComputePair/#&/' 20250926-Tde.lammpsin
 				    sed -i 's/^compute[[:space:]]\+ComputePairReduceMin[[:space:]]\+all pair mtp/#&/' 20250926-Tde.lammpsin
 				    sed -i "s|PotentialBankTemp|PotDirTemp|g" 20250926-Tde.lammpsin
-				    LmpEamTemp -in 20250926-Tde.lammpsin -log 20250926-Tde.lammpslog > /dev/null 2>&1
+				    LmpEamTemp -in 20250926-Tde.lammpsin -log Tde.lammpslog > /dev/null 2>&1
 
 				elif [[ " ${PotentialsTabGap[*]} " =~ " PotentialTemp " ]]; then
 				    sed -i 's/^pair_style[[:space:]]\+eam\/alloy/#&/' 20250926-Tde.lammpsin
-				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* PotentialBankTemp\/PotentialTemp.eampot Zr/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* PotentialBankTemp\/PotentialTemp.pot Zr/#&/' 20250926-Tde.lammpsin
 				    #sed -i 's/^pair_style[[:space:]]\+hybrid\/overlay tabgap eam\/alloy/#&/' 20250926-Tde.lammpsin
 				    #sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* tabgap[[:space:]]\+PotentialBankTemp\/PotentialTemp.tabgap Zr no yes/#&/' 20250926-Tde.lammpsin
 				    #sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* eam\/alloy[[:space:]]\+PotentialBankTemp\/PotentialTemp.eam.fs Zr/#&/' 20250926-Tde.lammpsin
@@ -179,12 +179,12 @@ for direction in "${directions[@]}"
 				    sed -i 's/^compute[[:space:]]\+ComputePairReduceMin[[:space:]]\+all pair mtp/#&/' 20250926-Tde.lammpsin
 				    sed -i "s|PotentialBankTemp|PotDirTemp|g" 20250926-Tde.lammpsin
 				    chmod +rwx /home/veshand/Software/Lammps-tabGAP/lmp4_CC
-				    LmpTapGapTemp -in 20250926-Tde.lammpsin -log 20250926-Tde.lammpslog > /dev/null 2>&1
+				    LmpTapGapTemp -in 20250926-Tde.lammpsin -log Tde.lammpslog > /dev/null 2>&1
 
 
 				elif [[ " ${PotentialsMtp[*]} " =~ " PotentialTemp " ]]; then
 				    sed -i 's/^pair_style[[:space:]]\+eam\/alloy/#&/' 20250926-Tde.lammpsin
-				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* PotentialBankTemp\/PotentialTemp.eampot Zr/#&/' 20250926-Tde.lammpsin
+				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* PotentialBankTemp\/PotentialTemp.pot Zr/#&/' 20250926-Tde.lammpsin
 				    sed -i 's/^pair_style[[:space:]]\+hybrid\/overlay tabgap eam\/alloy/#&/' 20250926-Tde.lammpsin
 				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* tabgap[[:space:]]\+PotentialBankTemp\/PotentialTemp.tabgap Zr no yes/#&/' 20250926-Tde.lammpsin
 				    sed -i 's/^pair_coeff[[:space:]]\+\*\s\+\* eam\/alloy[[:space:]]\+PotentialBankTemp\/PotentialTemp.eam.fs Zr/#&/' 20250926-Tde.lammpsin
@@ -195,7 +195,7 @@ for direction in "${directions[@]}"
 				    #sed -i 's/^compute[[:space:]]\+ComputePairReduceMin[[:space:]]\+all pair mtp/#&/' 20250926-Tde.lammpsin
 				    sed -i 's/c_ComputePairReduceMin/c_ComputePairReduceMin[1]/g' 20250926-Tde.lammpsin
 				    sed -i "s|PotentialBankTemp|PotDirTemp|g" 20250926-Tde.lammpsin
-				    LmpMptTemp -in 20250926-Tde.lammpsin -log 20250926-Tde.lammpslog > /dev/null 2>&1
+				    LmpMptTemp -in 20250926-Tde.lammpsin -log Tde.lammpslog > /dev/null 2>&1
 				fi
 
 				#__________________________________________________________
@@ -208,7 +208,7 @@ for direction in "${directions[@]}"
 				}
 				#echo "The output of 20250926-Tde-Defect-Dt.py is: $DefectDt"
 
-                                sed -e 's/DumpFileTemp/20250926-Tde.dump/g; s/RefFileTemp/20250211-Thermalization.dump/g;' ../../../../../20250926-Tde-Defect-Ws.pytemp > 20250926-Tde-Defect-Ws.py
+                                sed -e 's/DumpFileTemp/Tde.dump/g; s/RefFileTemp/20250211-Thermalization.dump/g;' ../../../../../20250926-Tde-Defect-Ws.pytemp > 20250926-Tde-Defect-Ws.py
 
 				DefectWs=$(python3 20250926-Tde-Defect-Ws.py 2>&1) || {
 					echo "Error in Defect-Ws.py:"
@@ -228,26 +228,26 @@ for direction in "${directions[@]}"
 					cd ..
 					break
 				elif (( DefectDt == 0 && DefectWs == 0 )); then
-					rm -rf 20250926-Tde-Thermalization.data
-					rm -rf 20250926-Tde.data
-					rm -rf 20250926-Tde.dump
+					rm -rf Tde-Thermalization.data
+					rm -rf Tde.data
+					rm -rf Tde.dump
 					rm -rf 20250926-Tde.lammpsin
 				elif (( DefectDt == 1 && DefectWs == 0 )); then
                                         if $Dt1Ws0; then
                                             Dt1Ws0=false
                                         else
-					    rm -rf 20250926-Tde-Thermalization.data
-					    #rm -rf 20250926-Tde.data
-					    #rm -rf 20250926-Tde.dump
+					    rm -rf Tde-Thermalization.data
+					    #rm -rf Tde.data
+					    #rm -rf Tde.dump
 					    rm -rf 20250926-Tde.lammpsin
                                         fi
 				elif (( DefectDt == 0 && DefectWs == 1 )); then
                                         if $Dt0Ws1; then
                                             Dt0Ws1=false
                                         else
-					    rm -rf 20250926-Tde-Thermalization.data
-					    #rm -rf 20250926-Tde.data
-					    #rm -rf 20250926-Tde.dump
+					    rm -rf Tde-Thermalization.data
+					    #rm -rf Tde.data
+					    #rm -rf Tde.dump
 					    rm -rf 20250926-Tde.lammpsin
                                         fi
 				fi
