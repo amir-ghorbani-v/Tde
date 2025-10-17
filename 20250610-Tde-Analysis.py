@@ -16,6 +16,7 @@ print("**********  Library")
 # import cv2
 # import datetime
 # import fileinput
+from itertools import product
 import mplstereonet
 import matplotlib.colors as mcolors
 import matplotlib.ticker as mticker
@@ -106,7 +107,7 @@ if platform.system() == "Windows":
     # OriginalPotentialAddress = "D:/Queens_University/Project/Zr/PotentialBank/Eam/Mendelev/" + PotentialName + ".eampot"
     LammpsPythonAddress = "C:/Users/19ag40/AppData/Local/LAMMPS 64-bit 2Aug2023 with Python/Python/"
     LammpsTempAddress = "D:/Queens_University/Project/Zr/PotentialDevelopement/LammpsTemp"
-
+    CollectionAddress = "D:/Queens_University/MME/Project/Zr/Tde/Run"
     GroupRun = False
     GroupPlot = False
     PlottingSingle = True
@@ -293,6 +294,11 @@ Mapping = {
     'dir_0_1_2': 'dir_0_1_-1_2',
     'dir_-2_3_1': 'dir_-2_3_-1_1',
     'dir_-1_3_3': 'dir_-1_3_-2_3',
+
+    'dir_4_1_3': 'dir_4_1_-5_3',
+    'dir_1_0_0': 'dir_1_0_-1_0',
+    'dir_2_0_1': 'dir_2_0_-2_1',
+
 }
 
 DirectionList = list(Mapping.keys())
@@ -303,15 +309,15 @@ DirectionList = list(Mapping.keys())
 # <editor-fold desc="######################################## Read">
 print("######################################## Read")# %%
 
-# <editor-fold desc="***** 20250130-Tde-Defect">
-print("***** 20250130-Tde-Defect")
+# <editor-fold desc="***** Defect">
+print("***** Defect")
 
-# <editor-fold desc="Dataframe">
-print("Dataframe")
+# <editor-fold desc="^^^ Dataframe">
+print("^^^ Dataframe")
 Active=False
 if Active:
 
-    # <editor-fold desc="***** Deleting">
+    # <editor-fold desc="Deleting">
     DeleteList = [
         '20431216-Nonstop.csv',
         '20431216-ErrorDf.csv',
@@ -321,7 +327,6 @@ if Active:
         'exec_custom-Nonstop-One.sh'
         'exec_custom-Error-All.sh'
     ]
-
     Active = False
     if Active:
         for File in DeleteList:
@@ -338,11 +343,91 @@ if Active:
                 print(f"File does not exist: {File}")
     # </editor-fold>
 
-    # <editor-fold desc="***** Extraction">
-    print("***** Extraction")
-    Method ="Defect"
-    if Method == "Log":
+    # <editor-fold desc="Renaming">
+    print("Renaming")
+    Renaming = False
+    if Renaming:
+        Filename = "Tde-Defect.csv"
+        TemperatureList = [10,300]
+        PotentialList = ["M3R", "M2R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2", "MtpPd"]
+        TryList = range(1, 41)
+        DirectionList = [
+            "dir_0_0_1",
+            "dir_0_1_1",
+            "dir_0_3_1",
+            "dir_0_1_0",
+            "dir_-1_1_0",
+            "dir_-1_1_1",
+            "dir_-1_1_2",
+            "dir_1_2_0",
+            "dir_1_2_1",
+            "dir_1_2_2",
 
+            "dir_-2_3_3",
+            "dir_-1_4_1",
+            "dir_-1_3_1",
+            "dir_-1_2_2",
+            "dir_0_2_1",
+            "dir_-1_2_0",
+            "dir_-1_2_3",
+            "dir_-4_4_1",
+            "dir_-3_4_1",
+            "dir_-2_4_1",
+            "dir_-1_4_0",
+            "dir_-1_2_1",
+            "dir_0_2_3",
+            "dir_-1_4_2",
+            "dir_-2_2_3",
+            "dir_-3_4_3",
+            "dir_-2_3_2",
+            "dir_-2_2_1",
+            "dir_-1_3_0",
+            "dir_-1_3_2",
+            "dir_-3_4_2",
+            "dir_-1_4_3",
+            "dir_0_4_1",
+            "dir_-3_4_0",
+            "dir_-2_3_0",
+            "dir_0_1_2",
+            "dir_-2_3_1",
+            "dir_-1_3_3",
+
+            "dir_1_0_0",
+            "dir_2_0_1",
+            "dir_4_1_3",
+        ]
+        if SimulationEnvironment == "MyPc":
+            for Temperature, Potential, Try, Direction in product(TemperatureList, PotentialList, TryList, DirectionList):
+                BaseDirectory = os.path.join(CollectionAddress, str(Temperature), Potential, str(Try), Direction)
+                if not os.path.isdir(BaseDirectory):
+                    continue
+                for Item in os.scandir(BaseDirectory):
+                    if not Item.is_dir() or not Item.name.isdigit():
+                        continue
+                    Energy = Item.name
+
+                    Path = os.path.join(Item.path, Filename)
+                    if os.path.exists(Path):
+                        continue
+
+                    Path20250926 = os.path.join(Item.path, "20250926-Tde-Defect.csv")
+                    Path20250130 = os.path.join(Item.path, "20250130-Tde-Defect.csv")
+
+                    if any(os.path.exists(p) for p in (Path20250130, Path20250926)):
+                        print(Temperature, Potential, Try, Direction, Energy)
+
+                        if os.path.exists(Path20250926):
+                            os.rename(Path20250926, Path)
+                            if os.path.exists(Path20250130):
+                                os.remove(Path20250130)
+                        elif os.path.exists(Path20250130):
+                            os.rename(Path20250130, Path)
+    # </editor-fold>
+
+    # <editor-fold desc="Extraction">
+    print("Extraction")
+    Method ="Collection"
+    if Method == "Log":
         # <editor-fold desc="Reading">
         filename = "max_value_summary.txt"
         # DirectionList = ["dir_-1_1_0", "dir_-1_1_1", "dir_-1_1_2", "dir_0_0_1", "dir_0_1_0", "dir_0_1_1", "dir_0_3_1", "dir_1_2_0", "dir_1_2_1", "dir_1_2_2"]
@@ -394,41 +479,207 @@ if Active:
 
         Df.to_csv(PythonName + "-Df.csv", sep=',', index=False)
         # </editor-fold>
-
         # <editor-fold desc="Separation">
         Tde = Df[(Df["File"] == "Tde") & (Df["LookupWord"] == "EnergyPerAtomAfter")]
         DfEquilibrium = Df[Df["File"] == "Equilibrium"]
         DfThermalization = Df[Df["File"] == "Thermalization"]
         DfMinimization = Df[Df["File"] == "Minimization"]
         # </editor-fold>
-
     elif Method == "Out":
         Tde = pd.read_csv("20250506-Collection-Output.csv")
         Thermal = pd.read_csv("20250506-Collection-Thermal.csv")
+    elif Method == "Csv-All":
+        # <editor-fold desc="Reading">
+        Filename = "Tde-Defect.csv"
+        TemperatureList = [10,300]
+        PotentialList = ["M3R", "M2R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2", "MtpPd"]
+        DirectionList = [
+            "dir_0_0_1",
+            "dir_0_1_1",
+            "dir_0_3_1",
+            "dir_0_1_0",
+            "dir_-1_1_0",
+            "dir_-1_1_1",
+            "dir_-1_1_2",
+            "dir_1_2_0",
+            "dir_1_2_1",
+            "dir_1_2_2",
 
-    elif Method == "Defect":
-        Tde = pd.read_csv("20250505-Collection-Defect.csv")
+            "dir_-2_3_3",
+            "dir_-1_4_1",
+            "dir_-1_3_1",
+            "dir_-1_2_2",
+            "dir_0_2_1",
+            "dir_-1_2_0",
+            "dir_-1_2_3",
+            "dir_-4_4_1",
+            "dir_-3_4_1",
+            "dir_-2_4_1",
+            "dir_-1_4_0",
+            "dir_-1_2_1",
+            "dir_0_2_3",
+            "dir_-1_4_2",
+            "dir_-2_2_3",
+            "dir_-3_4_3",
+            "dir_-2_3_2",
+            "dir_-2_2_1",
+            "dir_-1_3_0",
+            "dir_-1_3_2",
+            "dir_-3_4_2",
+            "dir_-1_4_3",
+            "dir_0_4_1",
+            "dir_-3_4_0",
+            "dir_-2_3_0",
+            "dir_0_1_2",
+            "dir_-2_3_1",
+            "dir_-1_3_3",
 
-    # print(Df)
-    # os.system("pause")
+            "dir_1_0_0",
+            "dir_2_0_1",
+            "dir_4_1_3",
+        ]
+
+        Header = ["Temperature","Potential","Try","Direction","DefectDt","DefectWs"]
+        Tde = pd.DataFrame(columns=Header)
+
+        if SimulationEnvironment == "MyPc":
+            for Temperature in TemperatureList:
+                # print(Temperature)
+                for Potential in PotentialList:
+                    # print(Potential)
+                    for Try in np.arange(1, 41):
+                        # print(Try)
+                        for Direction in DirectionList:
+                            # print(Direction)
+                            for Energy in np.arange(0, 200):
+                                # print(Energy)
+                                Path = os.path.join(CollectionAddress, str(Temperature), Potential, str(Try), Direction, str(Energy), Filename)
+                                # print(Path)
+
+                                # print(Path)
+                                if os.path.exists(Path):
+                                    try:
+                                        print(Temperature, Potential, Try, Direction, Energy)
+                                        New = pd.read_csv(Path)
+                                        New["Temperature"] = Temperature
+                                        New["Potential"] = Potential
+                                        New["Try"] = Try
+                                        New["Direction"] = Direction
+                                        New["Energy"] = Energy
+                                        Tde = pd.concat([Tde, New], ignore_index=True, axis=0)
+                                    except Exception as e:
+                                        # print(Temperature, Potential, Try, Direction, Energy, "Not Found")
+                                        continue
+
+
+
+        Tde.to_csv(PythonName + "-Collection-Tde.csv", sep=',', index=False)
+        # </editor-fold>
+    elif Method == "Csv-Single":
+        # <editor-fold desc="Reading">
+        Filename = "20250130-Tde.csv"
+        PotentialList = ["M3R"]  # "M2R", "M3R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2"]
+        DirectionList = [
+            # "dir_0_1_2",
+            # "dir_-1_2_1",
+            # "dir_-1_3_2",
+            # "dir_-1_4_2",
+            # "dir_-2_3_3",
+            # "dir_-4_4_1",
+            # "dir_-2_3_0",
+            # "dir_-1_2_3",
+            # "dir_-3_4_0",
+            "dir_-1_2_0",
+            # "dir_-3_4_3",
+            # "dir_-1_4_3",
+            # "dir_-1_3_3",
+            # "dir_-1_2_2",
+            # "dir_0_2_1",
+            # "dir_-1_4_0",
+            # "dir_-2_3_1",
+            # "dir_-2_3_2",
+            # "dir_-2_2_3",
+            # "dir_0_2_3",
+            # "dir_-2_4_1",
+            # "dir_-2_2_1",
+            # "dir_-3_4_1",
+            # "dir_-1_3_1",
+            # "dir_-1_4_1",
+            # "dir_-3_4_2",
+            # "dir_-1_3_0",
+            # "dir_0_4_1"
+        ]
+
+        Header = ["Temperature", "Potential", "Try", "Direction", "DefectDt", "DefectWs"]
+        Tde = pd.DataFrame(columns=Header)
+
+        if SimulationEnvironment == "MyPc":
+            for Temperature in TemperatureList:
+                # print(Temperature)
+                for Potential in PotentialList:
+                    # print(Potential)
+                    for Try in np.arange(1, 1):
+                        # print(Try)
+                        for Direction in DirectionList:
+                            # print(Direction)
+                            for Energy in np.arange(0, 200):
+                                # print(Energy)
+                                Path = os.path.join(CurrentDirectory, Potential, str(Try), Direction, str(Energy),
+                                                    Filename)
+                                # print(Path)
+                                if os.path.exists(Path):
+                                    try:
+                                        print(Potential, Try, Direction)
+                                        New = pd.read_csv(Path)
+                                        New["Temperature"] = Temperature
+                                        New["Potential"] = Potential
+                                        New["Try"] = Try
+                                        New["Direction"] = Direction
+                                        New["Energy"] = Energy
+                                    except Exception as e:
+                                        continue
+
+                                Tde = pd.concat([Tde, New], ignore_index=True, axis=0)
+
+        elif SimulationEnvironment == "ComputeCanada":
+            Address = CurrentDirectory + "/" + filename
+            # FolderName = str(Address.split("\\")[-1])
+            FolderName = str(Address.split("/")[-2])
+            print(FolderName)
+            # os.system("pause")
+            Read = extract_info(Address)
+            DfNew = pd.DataFrame(Read).T.reset_index()
+            DfNew = DfNew.rename(columns={'index': 'Try'})
+            # print(DfNew)
+            # os.system("pause")
+
+            DfNew["Potential"] = FolderName
+            Df = pd.concat([Df, DfNew], ignore_index=True, axis=0)
+
+        Tde.to_csv(PythonName + "-Tde" + ".csv", sep=',', index=False)
+        # </editor-fold>
+    elif Method == "Collection":
+        Tde = pd.read_csv("D:/Queens_University/MME/Project/Zr/Tde/Run/20250810-Collection-Defect.csv")
+    else:
+        Tde = pd.read_csv(PythonName + "-Tde" + ".csv")
 
     # </editor-fold>
 
-    # <editor-fold desc="***** Miller to Miller-Bravais">
-    print("***** Miller to Miller-Bravais")
+    # <editor-fold desc="Miller to Miller-Bravais">
+    print("Miller to Miller-Bravais")
     # Tde = Tde[Tde["File"] == "Tde"].copy()
     Tde['DirectionMb'] = Tde['Direction'].replace(Mapping)
     # print(Tde)
     # </editor-fold>
 
-    # <editor-fold desc="***** Reparameterized">
-    print("***** Reparameterized")
+    # <editor-fold desc="Reparameterized">
+    print("Reparameterized")
     Tde['Reparameterization'] = Tde['Potential'].apply(lambda x: 'R' if x.endswith('R') else 'O')
     # print(DfBravaisMelt)
     # </editor-fold>
 
-    # <editor-fold desc="***** Polar">
-    print("***** Polar")
+    # <editor-fold desc="Polar">
+    print("Polar")
 
     Tde[['X', 'Y', 'Z']] = Tde['Direction'].apply(DirectionFunc).apply(pd.Series)
 
@@ -443,31 +694,37 @@ if Active:
     Tde[['a1', 'a2', 'a3', 'h']] = Tde['DirectionMb'].apply(DirectionFunc).apply(pd.Series)
     # </editor-fold>
 
-    # <editor-fold desc="***** Type Division">
-    print("***** Type Division")
+    # <editor-fold desc="Type Division">
+    print("Type Division")
     # print(Tde)
     TdeDt = Tde.drop(columns=['DefectWs'])
-    TdeWs = Tde.drop(columns=['DefectDist'])
+    TdeWs = Tde.drop(columns=['DefectDt'])
     # </editor-fold>
 
-    # <editor-fold desc="***** True Defect">
-    print("***** True Defect")
+    # <editor-fold desc="True Defect">
+    print("True Defect")
     # print(Tde)
-    TdeDt = Tde[Tde["DefectDist"] == 1]
+    TdeDt = Tde[Tde["DefectDt"] == 1]
     TdeWs = Tde[Tde["DefectWs"] == 1]
     # </editor-fold>
 
-    # <editor-fold desc="***** Group">
-    print("***** Group")
+    # <editor-fold desc="Group">
+    print("Group")
     # print(Tde)
     TdeGroupedPotential = Tde.groupby(['Potential'])
+    TdeGroupedPotentialTemperature = Tde.groupby(['Temperature', 'Potential'])
     TdeGroupedPotentialDirection = Tde.groupby(['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+    TdeGroupedPotentialDirectionTemperature = Tde.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
 
     TdeDtGroupedPotential = TdeDt.groupby(['Potential'])
+    TdeDtGroupedPotentialTemperature = TdeDt.groupby(['Temperature', 'Potential'])
     TdeDtGroupedPotentialDirection = TdeDt.groupby(['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+    TdeDtGroupedPotentialDirectionTemperature = TdeDt.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
 
     TdeWsGroupedPotential = TdeWs.groupby(['Potential'])
+    TdeWsGroupedPotentialTemperature = TdeWs.groupby(['Temperature', 'Potential'])
     TdeWsGroupedPotentialDirection = TdeWs.groupby(['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+    TdeWsGroupedPotentialDirectionTemperature = TdeWs.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
 
     # for group in TdeGroupedPotentialDirection:
     #     print(group)
@@ -475,8 +732,8 @@ if Active:
     # os.system("pause")
     # </editor-fold>
 
-    # <editor-fold desc="***** Describe">
-    print("***** Describe")
+    # <editor-fold desc="Describe">
+    print("Describe")
     TdeGroupedPotentialStd = TdeGroupedPotential.std(numeric_only=True).reset_index()
     TdeGroupedPotentialDescribe = TdeGroupedPotential["Energy"].describe().reset_index()
     TdeDtGroupedPotentialStd = TdeDtGroupedPotential.std(numeric_only=True).reset_index()
@@ -484,69 +741,97 @@ if Active:
     TdeWsGroupedPotentialStd = TdeWsGroupedPotential.std(numeric_only=True).reset_index()
     TdeWsGroupedPotentialDescribe = TdeWsGroupedPotential["Energy"].describe().reset_index()
 
+    TdeGroupedPotentialTemperatureStd = TdeGroupedPotentialTemperature.std(numeric_only=True).reset_index()
+    TdeGroupedPotentialTemperatureDescribe = TdeGroupedPotentialTemperature["Energy"].describe().reset_index()
+    TdeDtGroupedPotentialTemperatureStd = TdeDtGroupedPotentialTemperature.std(numeric_only=True).reset_index()
+    TdeDtGroupedPotentialTemperatureDescribe = TdeDtGroupedPotentialTemperature["Energy"].describe().reset_index()
+    TdeWsGroupedPotentialTemperatureStd = TdeWsGroupedPotentialTemperature.std(numeric_only=True).reset_index()
+    TdeWsGroupedPotentialTemperatureDescribe = TdeWsGroupedPotentialTemperature["Energy"].describe().reset_index()
+
     TdeGroupedPotentialDirectionStd = TdeGroupedPotentialDirection.std(numeric_only=True).reset_index()
     TdeGroupedPotentialDirectionDescribe = TdeGroupedPotentialDirection["Energy"].describe().reset_index()
     TdeDtGroupedPotentialDirectionStd = TdeDtGroupedPotentialDirection.std(numeric_only=True).reset_index()
     TdeDtGroupedPotentialDirectionDescribe = TdeDtGroupedPotentialDirection["Energy"].describe().reset_index()
     TdeWsGroupedPotentialDirectionStd = TdeWsGroupedPotentialDirection.std(numeric_only=True).reset_index()
     TdeWsGroupedPotentialDirectionDescribe = TdeWsGroupedPotentialDirection["Energy"].describe().reset_index()
+
+    TdeGroupedPotentialDirectionTemperatureStd = TdeGroupedPotentialDirectionTemperature.std(numeric_only=True).reset_index()
+    TdeGroupedPotentialDirectionTemperatureDescribe = TdeGroupedPotentialDirectionTemperature["Energy"].describe().reset_index()
+    TdeDtGroupedPotentialDirectionTemperatureStd = TdeDtGroupedPotentialDirectionTemperature.std(numeric_only=True).reset_index()
+    TdeDtGroupedPotentialDirectionTemperatureDescribe = TdeDtGroupedPotentialDirectionTemperature["Energy"].describe().reset_index()
+    TdeWsGroupedPotentialDirectionTemperatureStd = TdeWsGroupedPotentialDirectionTemperature.std(numeric_only=True).reset_index()
+    TdeWsGroupedPotentialDirectionTemperatureDescribe = TdeWsGroupedPotentialDirectionTemperature["Energy"].describe().reset_index()
     # </editor-fold>
 
     # <editor-fold desc="Export">
     Tde.to_csv(PythonName + "-Tde" + ".csv", index=False)
     TdeGroupedPotentialDescribe.to_csv(PythonName + "-" + "TdeGroupedPotentialDescribe.csv", sep=',', index=False)
+    TdeGroupedPotentialTemperatureDescribe.to_csv(PythonName + "-" + "TdeGroupedPotentialTemperatureDescribe.csv", sep=',', index=False)
     TdeGroupedPotentialDirectionDescribe.to_csv(PythonName + "-" + "TdeGroupedPotentialDirectionDescribe.csv", sep=',', index=False)
+    TdeGroupedPotentialDirectionTemperatureDescribe.to_csv(PythonName + "-" + "TdeGroupedPotentialDirectionTemperatureDescribe.csv", sep=',', index=False)
 
     TdeDt.to_csv(PythonName + "-TdeDt" + ".csv", index=False)
     TdeDtGroupedPotentialDescribe.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDescribe.csv", sep=',', index=False)
+    TdeDtGroupedPotentialTemperatureDescribe.to_csv(PythonName + "-" + "TdeDtGroupedPotentialTemperatureDescribe.csv", sep=',', index=False)
     TdeDtGroupedPotentialDirectionDescribe.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionDescribe.csv", sep=',', index=False)
+    TdeDtGroupedPotentialDirectionTemperatureDescribe.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureDescribe.csv", sep=',', index=False)
 
     TdeWs.to_csv(PythonName + "-TdeWs" + ".csv", index=False)
     TdeWsGroupedPotentialDescribe.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDescribe.csv", sep=',', index=False)
+    TdeWsGroupedPotentialTemperatureDescribe.to_csv(PythonName + "-" + "TdeWsGroupedPotentialTemperatureDescribe.csv", sep=',', index=False)
     TdeWsGroupedPotentialDirectionDescribe.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionDescribe.csv", sep=',', index=False)
+    TdeWsGroupedPotentialDirectionTemperatureDescribe.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureDescribe.csv", sep=',', index=False)
     # </editor-fold>
+
 else:
     Tde = pd.read_csv(PythonName + "-Tde" + ".csv")
     TdeGroupedPotentialDescribe = pd.read_csv(PythonName + "-" + "TdeGroupedPotentialDescribe.csv")
+    TdeGroupedPotentialTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeGroupedPotentialTemperatureDescribe.csv")
     TdeGroupedPotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "TdeGroupedPotentialDirectionDescribe.csv")
+    TdeGroupedPotentialDirectionTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeGroupedPotentialDirectionTemperatureDescribe.csv")
 
     TdeDt = pd.read_csv(PythonName + "-TdeDt" + ".csv")
     TdeDtGroupedPotentialDescribe = pd.read_csv(PythonName + "-" + "TdeDtGroupedPotentialDescribe.csv")
+    TdeDtGroupedPotentialTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeDtGroupedPotentialTemperatureDescribe.csv")
     TdeDtGroupedPotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionDescribe.csv")
+    TdeDtGroupedPotentialDirectionTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureDescribe.csv")
 
     TdeWs = pd.read_csv(PythonName + "-TdeWs" + ".csv")
     TdeWsGroupedPotentialDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedPotentialDescribe.csv")
+    TdeWsGroupedPotentialTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedPotentialTemperatureDescribe.csv")
     TdeWsGroupedPotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionDescribe.csv")
+    TdeWsGroupedPotentialDirectionTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureDescribe.csv")
 
-Thermal = pd.read_csv("20250506-Collection-Thermal.csv")
+
 # </editor-fold>
 
-# <editor-fold desc="Group">
-print("Group")
+# <editor-fold desc="^^^ Group">
+print("^^^ Group")
 # print(Tde)
 TdeGroupedPotential = Tde.groupby(['Potential'])
-TdeGroupedPotentialDirection = Tde.groupby(
-    ['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
-     'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+TdeGroupedPotentialTemperature = Tde.groupby(['Temperature', 'Potential'])
+TdeGroupedPotentialDirection = Tde.groupby(['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ','Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+TdeGroupedPotentialDirectionTemperature = Tde.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY',
+     'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
 
 TdeDtGroupedPotential = TdeDt.groupby(['Potential'])
-TdeDtGroupedPotentialDirection = TdeDt.groupby(
-    ['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
+TdeDtGroupedPotentialTemperature = TdeDt.groupby(['Temperature', 'Potential'])
+TdeDtGroupedPotentialDirection = TdeDt.groupby(['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
      'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+TdeDtGroupedPotentialDirectionTemperature = TdeDt.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY',
+     'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
 
 TdeWsGroupedPotential = TdeWs.groupby(['Potential'])
-TdeWsGroupedPotentialDirection = TdeWs.groupby(
-    ['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
+TdeWsGroupedPotentialTemperature = TdeWs.groupby(['Temperature', 'Potential'])
+TdeWsGroupedPotentialDirection = TdeWs.groupby(['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
      'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+TdeWsGroupedPotentialDirectionTemperature = TdeWs.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY',
+     'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
 
-# for group in TdeGroupedPotentialDirection:
-#     print(group)
-# print(Tde)
-# os.system("pause")
 # </editor-fold>
 
-# <editor-fold desc="Dictionary">
-print("Dictionary")
+# <editor-fold desc="^^^ Dictionary">
+print("^^^ Dictionary")
 TdeDefectGroupedPotentialDic = {
     'Ws': TdeWsGroupedPotential,
     'Dist': TdeDtGroupedPotential
@@ -561,13 +846,14 @@ TdeDefectGroupedPotentialDirectionDescribeDic = {
 
 # </editor-fold>
 
-# <editor-fold desc="***** 20250130-Tde-Report">
-print("***** 20250130-Tde-Report")
+# <editor-fold desc="***** Report">
+print("***** Report")
 
-# <editor-fold desc="Dataframe">
-print("Dataframe")
-Active=False
-if Active:
+# <editor-fold desc="^^^ Dataframe">
+print("^^^ Dataframe")
+ReadBatch = False
+Method = "ExtractIndividually"
+if Method == "ExtractBatch":
 
     # <editor-fold desc="Deleting">
     DeleteList = [
@@ -594,6 +880,87 @@ if Active:
                     print(f"Error deleting {File}: {e}")
             else:
                 print(f"File does not exist: {File}")
+    # </editor-fold>
+
+    # <editor-fold desc="Renaming">
+    print("Renaming")
+    Renaming = True
+    if Renaming:
+        Filename = "Tde.csv"
+        TemperatureList = [10,300]
+        PotentialList = ["M3R", "M2R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2", "MtpPd"]
+        TryList = range(1, 41)
+        DirectionList = [
+            "dir_0_0_1",
+            "dir_0_1_1",
+            "dir_0_3_1",
+            "dir_0_1_0",
+            "dir_-1_1_0",
+            "dir_-1_1_1",
+            "dir_-1_1_2",
+            "dir_1_2_0",
+            "dir_1_2_1",
+            "dir_1_2_2",
+
+            "dir_-2_3_3",
+            "dir_-1_4_1",
+            "dir_-1_3_1",
+            "dir_-1_2_2",
+            "dir_0_2_1",
+            "dir_-1_2_0",
+            "dir_-1_2_3",
+            "dir_-4_4_1",
+            "dir_-3_4_1",
+            "dir_-2_4_1",
+            "dir_-1_4_0",
+            "dir_-1_2_1",
+            "dir_0_2_3",
+            "dir_-1_4_2",
+            "dir_-2_2_3",
+            "dir_-3_4_3",
+            "dir_-2_3_2",
+            "dir_-2_2_1",
+            "dir_-1_3_0",
+            "dir_-1_3_2",
+            "dir_-3_4_2",
+            "dir_-1_4_3",
+            "dir_0_4_1",
+            "dir_-3_4_0",
+            "dir_-2_3_0",
+            "dir_0_1_2",
+            "dir_-2_3_1",
+            "dir_-1_3_3",
+
+            "dir_1_0_0",
+            "dir_2_0_1",
+            "dir_4_1_3",
+        ]
+        if SimulationEnvironment == "MyPc":
+            for Temperature, Potential, Try, Direction in product(TemperatureList, PotentialList, TryList, DirectionList):
+                BaseDirectory = os.path.join(CollectionAddress, str(Temperature), Potential, str(Try), Direction)
+                if not os.path.isdir(BaseDirectory):
+                    continue
+                for Item in os.scandir(BaseDirectory):
+                    if not Item.is_dir() or not Item.name.isdigit():
+                        continue
+                    Energy = Item.name
+
+                    Path = os.path.join(Item.path, Filename)
+                    if os.path.exists(Path):
+                        continue
+
+                    Path20250926 = os.path.join(Item.path, "20250926-Tde.csv")
+                    Path20250130 = os.path.join(Item.path, "20250130-Tde.csv")
+
+                    if any(os.path.exists(p) for p in (Path20250130, Path20250926)):
+                        print(Temperature, Potential, Try, Direction, Energy)
+
+                        if os.path.exists(Path20250926):
+                            os.rename(Path20250926, Path)
+                            if os.path.exists(Path20250130):
+                                os.remove(Path20250130)
+                        elif os.path.exists(Path20250130):
+                            os.rename(Path20250130, Path)
     # </editor-fold>
 
     # <editor-fold desc="Extraction">
@@ -876,25 +1243,29 @@ if Active:
     ReportDfGroupedPotentialDirectionDescribe.to_csv(PythonName + "-" + "ReportDfGroupedPotentialDirectionDescribe.csv", sep=',', index=False)
     # </editor-fold>
 
-else:
-    # ReportDf = pd.read_csv(PythonName + "-ReportDf" + ".csv") # commented our because of the size, activate it later
+
+elif Method == "ReadBatch":
+    ReportDf = pd.read_csv(PythonName + "-ReportDf" + ".csv") # commented our because of the size, activate it later
     ReportDfGroupedPotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "ReportDfGroupedPotentialDirectionDescribe.csv")
 
     # <editor-fold desc="Group">
     print("Group")
-    # print(Tde)
-    # ReportDfGroupedPotential = ReportDf.groupby(['Potential']) # commented our because of the size, activate it later
-    # ReportDfGroupedPotentialDirection = ReportDf.groupby(
-    #     ['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
-    #      'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+    ReportDfGroupedPotential = ReportDf.groupby(['Potential']) # commented our because of the size, activate it later
+    ReportDfGroupedPotentialDirection = ReportDf.groupby(
+        ['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
+         'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
     # </editor-fold>
 
-# </editor-fold>
+elif Method == "ExtractIndividually":
+    print("ExtractIndividually")
+
 
 # </editor-fold>
 
-# <editor-fold desc="***** 20250130-Tde-Report-Single">
-print("***** 20250130-Tde-Report-Single")
+# </editor-fold>
+
+# <editor-fold desc="***** Report-Single">
+print("***** Report-Single")
 
 # <editor-fold desc="Dataframe">
 print("Dataframe")
@@ -1074,7 +1445,7 @@ if Active:
 
 else:
     # ReportSingleDf = pd.read_csv(PythonName + "-ReportSingleDf" + ".csv") # commented our because of the size, activate it later
-    ReportSingleDfGroupedPotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "ReportSingleDfGroupedPotentialDirectionDescribe.csv")
+    # ReportSingleDfGroupedPotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "ReportSingleDfGroupedPotentialDirectionDescribe.csv")
 
     # <editor-fold desc="Group">
     print("Group")
@@ -1088,6 +1459,35 @@ else:
 # </editor-fold>
 
 # </editor-fold>
+
+# <editor-fold desc="***** Thermal">
+print("***** Thermal")
+
+# <editor-fold desc="Read">
+Thermal10 = pd.read_csv("D:/Queens_University/MME/Project/Zr/Tde/Run/10/20250506-Collection-Thermal.csv")
+Thermal300 = pd.read_csv("D:/Queens_University/MME/Project/Zr/Tde/Run/300/20250506-Collection-Thermal.csv")
+Thermal10["Temperature"] = 10
+Thermal300["Temperature"] = 300
+Thermal = pd.concat([Thermal10, Thermal300], ignore_index=True, axis=0)
+# </editor-fold>
+
+# <editor-fold desc="Plot">
+Plotting = True
+if Plotting:
+    files = Thermal['File'].unique()
+
+    for f in files:
+        subset = Thermal[Thermal['File'] == f]
+        plt.figure(figsize=(6, 6))
+        sns.barplot(data=subset, x='Potential', y='EnergyPerAtom', hue='LookupWord')
+        plt.title(f'Energy per Atom vs Potential ({f})')
+        plt.xlabel('Potential')
+        plt.ylabel('Energy per Atom')
+        plt.tight_layout()
+        plt.show()
+
+# </editor-fold>
+
 
 # </editor-fold>
 
@@ -1105,118 +1505,165 @@ print("######################################## Tde Stats") # %%
 
 # <editor-fold desc="***** Stat">
 print("***** Stat")
-TdeDtGroupedPotentialDirectionMin = TdeDtGroupedPotentialDirection["Energy"].min().reset_index()
-TdeDtGroupedPotentialDirectionMin.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionMin.csv", index=False)
+# <editor-fold desc="Dt">
+# print(TdeDtGroupedPotentialDirection)
+# os.system("pause")
+TdeDtGroupedPotentialDirectionTemperatureMin = TdeDtGroupedPotentialDirectionTemperature["Energy"].min().reset_index()
+TdeDtGroupedPotentialDirectionTemperatureMin.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureMin.csv", index=False)
 
-TdeDtGroupedPotentialDirectionMean = TdeDtGroupedPotentialDirection["Energy"].mean().reset_index()
-TdeDtGroupedPotentialDirectionMean.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionMean.csv", index=False)
+TdeDtGroupedPotentialDirectionTemperatureMean = TdeDtGroupedPotentialDirectionTemperature["Energy"].mean().reset_index()
+TdeDtGroupedPotentialDirectionTemperatureMean.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureMean.csv", index=False)
 
-TdeDtGroupedPotentialDirectionMedian = (
-    TdeDtGroupedPotentialDirection["Energy"].median().reset_index()
-)
-TdeDtGroupedPotentialDirectionMedian.to_csv(
-    PythonName + "-" + "TdeDtGroupedPotentialDirectionMedian.csv", index=False
-)
+TdeDtGroupedPotentialDirectionTemperatureMedian = (TdeDtGroupedPotentialDirectionTemperature["Energy"].median().reset_index())
+TdeDtGroupedPotentialDirectionTemperatureMedian.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureMedian.csv", index=False)
 
-TdeDtGroupedPotentialDirectionMode = (
-    TdeDtGroupedPotentialDirection["Energy"].apply(lambda x: x.mode().iloc[0]).reset_index()
-)
-TdeDtGroupedPotentialDirectionMode.to_csv(
-    PythonName + "-" + "TdeDtGroupedPotentialDirectionMode.csv", index=False
-)
+TdeDtGroupedPotentialDirectionTemperatureMode = (TdeDtGroupedPotentialDirectionTemperature["Energy"].apply(lambda x: x.mode().iloc[0]).reset_index())
+TdeDtGroupedPotentialDirectionTemperatureMode.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureMode.csv", index=False)
 
-TdeDtGroupedPotentialDirectionVariance = (
-    TdeDtGroupedPotentialDirection["Energy"].var().reset_index()
-)
-TdeDtGroupedPotentialDirectionVariance.to_csv(
-    PythonName + "-" + "TdeDtGroupedPotentialDirectionVar.csv", index=False
-)
+TdeDtGroupedPotentialDirectionTemperatureVariance = (TdeDtGroupedPotentialDirectionTemperature["Energy"].var().reset_index())
+TdeDtGroupedPotentialDirectionTemperatureVariance.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureVar.csv", index=False)
+# </editor-fold>
+
+# <editor-fold desc="Ws">
+TdeWsGroupedPotentialDirectionTemperatureMin = TdeWsGroupedPotentialDirectionTemperature["Energy"].min().reset_index()
+TdeWsGroupedPotentialDirectionTemperatureMin.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureMin.csv", index=False)
+
+TdeWsGroupedPotentialDirectionTemperatureMean = TdeWsGroupedPotentialDirectionTemperature["Energy"].mean().reset_index()
+TdeWsGroupedPotentialDirectionTemperatureMean.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureMean.csv", index=False)
+
+TdeWsGroupedPotentialDirectionTemperatureMedian = (TdeWsGroupedPotentialDirectionTemperature["Energy"].median().reset_index())
+TdeWsGroupedPotentialDirectionTemperatureMedian.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureMedian.csv", index=False)
+
+TdeWsGroupedPotentialDirectionTemperatureMode = (TdeWsGroupedPotentialDirectionTemperature["Energy"].apply(lambda x: x.mode().iloc[0]).reset_index())
+TdeWsGroupedPotentialDirectionTemperatureMode.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureMode.csv", index=False)
+
+TdeWsGroupedPotentialDirectionTemperatureVariance = (TdeWsGroupedPotentialDirectionTemperature["Energy"].var().reset_index())
+TdeWsGroupedPotentialDirectionTemperatureVariance.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureVar.csv", index=False)
+# </editor-fold>
+
 # </editor-fold>
 
 # <editor-fold desc="***** Literature">
 print("***** Literature")
 TdeDtUniqueDirections = TdeDt["Direction"].unique()
+# print(TdeDt["Temperature"].dtype)
+TdeDtUniqueTemperatures = TdeDt["Temperature"].unique()
+# print(TdeDtUniqueTemperatures)
+# os.system("pause")
 
-LiteratureBiget = pd.DataFrame({
-    "Potential": "Biget",
-    "Direction": TdeDtUniqueDirections,
-    "Energy": 21,
-})
-LiteratureNeely = pd.DataFrame({
-    "Potential": "Neely",
-    "Direction": TdeDtUniqueDirections,
-    "Energy": 24,
-})
+Combination = pd.MultiIndex.from_product(
+    [TdeDtUniqueDirections, TdeDtUniqueTemperatures],
+    names=['Direction', 'Temperature']
+)
+
+CombinationDf = Combination.to_frame(index=False)
+# print(CombinationDf)
+# os.system("pause")
+LiteratureBiget = CombinationDf.copy()
+LiteratureBiget["Potential"] = "Biget"
+LiteratureBiget["Energy"] = 21
+
+LiteratureNeely = CombinationDf.copy()
+LiteratureNeely["Potential"] = "Neely"
+LiteratureNeely["Energy"] = 24
 
 LiteratureBiget['DirectionMb'] = LiteratureBiget['Direction'].replace(Mapping)
 LiteratureNeely['DirectionMb'] = LiteratureNeely['Direction'].replace(Mapping)
 
 TdeLiterature = pd.concat([LiteratureBiget, LiteratureNeely], ignore_index=True)
-TdeDtGroupedPotentialDirectionMin = pd.concat([TdeDtGroupedPotentialDirectionMin, TdeLiterature], ignore_index=True)
-TdeDtGroupedPotentialDirectionMean = pd.concat([TdeDtGroupedPotentialDirectionMean, TdeLiterature], ignore_index=True)
+# print(TdeLiterature)
+# TdeLiterature.to_csv("test.csv", sep=',', index=False)
+# os.system("pause")
+TdeDtGroupedPotentialDirectionTemperatureMin = pd.concat([TdeDtGroupedPotentialDirectionTemperatureMin, TdeLiterature], ignore_index=True)
+TdeDtGroupedPotentialDirectionTemperatureMean = pd.concat([TdeDtGroupedPotentialDirectionTemperatureMean, TdeLiterature], ignore_index=True)
+
+TdeWsGroupedPotentialDirectionTemperatureMin = pd.concat([TdeWsGroupedPotentialDirectionTemperatureMin, TdeLiterature], ignore_index=True)
+TdeWsGroupedPotentialDirectionTemperatureMean = pd.concat([TdeWsGroupedPotentialDirectionTemperatureMean, TdeLiterature], ignore_index=True)
 # </editor-fold>
 
 # <editor-fold desc="***** Dic">
 print("***** Dic")
-TdeDtGroupedPotentialDirectionStatDic = {
-    "Min": TdeDtGroupedPotentialDirectionMin,
-    "Mean": TdeDtGroupedPotentialDirectionMean,
-    "Median": TdeDtGroupedPotentialDirectionMedian,
-    "Mode": TdeDtGroupedPotentialDirectionMode,
-    "Variance": TdeDtGroupedPotentialDirectionVariance,
+TdeDtGroupedPotentialDirectionTemperatureStatDic = {
+    "Min": TdeDtGroupedPotentialDirectionTemperatureMin,
+    "Mean": TdeDtGroupedPotentialDirectionTemperatureMean,
+    "Median": TdeDtGroupedPotentialDirectionTemperatureMedian,
+    "Mode": TdeDtGroupedPotentialDirectionTemperatureMode,
+    "Variance": TdeDtGroupedPotentialDirectionTemperatureVariance,
+}
+
+TdeWsGroupedPotentialDirectionTemperatureStatDic = {
+    "Min": TdeWsGroupedPotentialDirectionTemperatureMin,
+    "Mean": TdeWsGroupedPotentialDirectionTemperatureMean,
+    "Median": TdeWsGroupedPotentialDirectionTemperatureMedian,
+    "Mode": TdeWsGroupedPotentialDirectionTemperatureMode,
+    "Variance": TdeWsGroupedPotentialDirectionTemperatureVariance,
+}
+
+TdeGroupedPotentialDirectionTemperatureStatDic = {
+    "Ws": TdeWsGroupedPotentialDirectionTemperatureStatDic,
+    "Dt": TdeDtGroupedPotentialDirectionTemperatureStatDic,
 }
 # </editor-fold>
 
 # <editor-fold desc="***** Plot">
 print("***** Plot")
 Plotting = False
-
 if Plotting:
-    for Name, Df in TdeDtGroupedPotentialDirectionStatDic.items():
-        print(Name)
-        DirectionListRemove = []  # e.g., ["dir_0_1_2"] if you want to exclude some
-        HeatmapDf = Df[~Df["Direction"].isin(DirectionListRemove)].copy()
-        HeatmapDf["DirectionMb"] = HeatmapDf["DirectionMb"].apply(LatexFriendlyFunc)
+    for Analysis, Dic in TdeGroupedPotentialDirectionTemperatureStatDic.items():
+        # print(Analysis)
+        for Stat, Df in TdeDtGroupedPotentialDirectionTemperatureStatDic.items():
+            # print(Stat)
+            # print(Df)
+            # Df.to_csv("test.csv", sep=',', index=False)
+            for Temperature in Df['Temperature'].unique():
+                # print(Temperature)
+                print(Analysis,Stat,Temperature)
+                HeatmapDf = Df[Df['Temperature'] == Temperature]
 
-        potential_order = [
-            "M2", "M3", "BMD192", "M2R", "M3R", "BMD192R",
-            "TabGap1", "TabGap2", "Biget", "Neely"
-        ]
-        HeatmapDf["Potential"] = pd.Categorical(
-            HeatmapDf["Potential"], categories=potential_order, ordered=True
-        )
+                DirectionListRemove = ["dir_4_1_3","dir_1_0_0","dir_2_0_1"]  # e.g., ["dir_0_1_2"] if you want to exclude some
+                DirectionListRemove = []
+                HeatmapDf = HeatmapDf[~HeatmapDf["Direction"].isin(DirectionListRemove)].copy()
 
-        Title = PythonName + "-TdeDtGroupedPotentialDirectionEnergyHeatmap" + str(Name)
+                HeatmapDf["DirectionMb"] = HeatmapDf["DirectionMb"].apply(LatexFriendlyFunc)
 
-        HeatmapPivot = HeatmapDf.pivot_table(
-            index="Potential",
-            columns="DirectionMb",
-            values="Energy",
-            aggfunc="mean"  # safe even if duplicates exist
-        )
+                potential_order = [
+                    "M2", "M3", "BMD192", "M2R", "M3R", "BMD192R",
+                    "TabGap1", "TabGap2", "Biget", "Neely"
+                ]
+                HeatmapDf["Potential"] = pd.Categorical(
+                    HeatmapDf["Potential"], categories=potential_order, ordered=True
+                )
 
-        # Compute average across each row (Potential)
-        row_means = HeatmapPivot.mean(axis=1, skipna=True).round(2)
+                Title = PythonName + "-TdeGroupedPotentialDirectionTemperatureStatDic" + "-" + str(Analysis) + "-" + str(Stat) + "-" + str(Temperature)
 
-        # Append averages to the row labels
-        HeatmapPivot.index = [
-            f"{idx} ({row_means.loc[idx]})" for idx in HeatmapPivot.index
-        ]
+                HeatmapPivot = HeatmapDf.pivot_table(
+                    index="Potential",
+                    columns="DirectionMb",
+                    values="Energy",
+                    aggfunc="mean"  # safe even if duplicates exist
+                )
 
-        plt.figure(figsize=(16, 4))
-        sns.heatmap(
-            HeatmapPivot,
-            annot=False,
-            cmap="coolwarm",
-            cbar_kws={'label': str(Name)}
-        )
-        plt.xlabel("")
-        plt.ylabel("")
-        plt.tight_layout()
-        plt.savefig(f"{Title}.png", dpi=600)
-        plt.show()
-        plt.close()
+                # Compute average across each row (Potential)
+                row_means = HeatmapPivot.mean(axis=1, skipna=True).round(2)
 
+                # Append averages to the row labels
+                HeatmapPivot.index = [
+                    f"{idx} ({row_means.loc[idx]})" for idx in HeatmapPivot.index
+                ]
+
+                plt.figure(figsize=(18, 4))
+                sns.heatmap(
+                    HeatmapPivot,
+                    annot=False,
+                    cmap="coolwarm",
+                    cbar_kws={'label': str(Stat)}
+                )
+                plt.xlabel("")
+                plt.ylabel("")
+                plt.tight_layout()
+                plt.savefig(f"{Title}.png", dpi=600)
+                plt.show()
+                plt.close()
 
 # </editor-fold>
 # </editor-fold>
@@ -1655,7 +2102,7 @@ print("######################################## Energy per atom") # %%
 
 # <editor-fold desc="***** Plot">
 print("***** Plot")
-Active = False
+Active = True
 if Active:
     for Potential in Tde["Potential"].unique():
         DfFilteredPotential = Tde[Tde["Potential"] == Potential]
@@ -4488,7 +4935,7 @@ if Plotting:
 
 # <editor-fold desc="***** Plot: Potential-Type-Direction">
 print("***** Plot: Potential-Type-Direction")
-Plotting = True
+Plotting = False
 if Plotting:
     StatList = ["mean", "min"]
     for Stat in StatList:
