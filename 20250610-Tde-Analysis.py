@@ -701,8 +701,8 @@ if Active:
     TdeWs = Tde.drop(columns=['DefectDt'])
     # </editor-fold>
 
-    # <editor-fold desc="True Defect">
-    print("True Defect")
+    # <editor-fold desc="Defect Detection Methods">
+    print("Defect Detection Methods")
     # print(Tde)
     TdeDt = Tde[Tde["DefectDt"] == 1]
     TdeWs = Tde[Tde["DefectWs"] == 1]
@@ -802,7 +802,6 @@ else:
     TdeWsGroupedPotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionDescribe.csv")
     TdeWsGroupedPotentialDirectionTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureDescribe.csv")
 
-
 # </editor-fold>
 
 # <editor-fold desc="^^^ Group">
@@ -852,7 +851,7 @@ print("***** Report")
 # <editor-fold desc="^^^ Dataframe">
 print("^^^ Dataframe")
 ReadBatch = False
-Method = "ExtractIndividually"
+Method = "Else"
 if Method == "ExtractBatch":
 
     # <editor-fold desc="Deleting">
@@ -1243,23 +1242,56 @@ if Method == "ExtractBatch":
     ReportDfGroupedPotentialDirectionDescribe.to_csv(PythonName + "-" + "ReportDfGroupedPotentialDirectionDescribe.csv", sep=',', index=False)
     # </editor-fold>
 
-
 elif Method == "ReadBatch":
     ReportDf = pd.read_csv(PythonName + "-ReportDf" + ".csv") # commented our because of the size, activate it later
     ReportDfGroupedPotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "ReportDfGroupedPotentialDirectionDescribe.csv")
 
-    # <editor-fold desc="Group">
-    print("Group")
-    ReportDfGroupedPotential = ReportDf.groupby(['Potential']) # commented our because of the size, activate it later
-    ReportDfGroupedPotentialDirection = ReportDf.groupby(
-        ['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
-         'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+elif Method == "HighestLast":
+    # <editor-fold desc="Extraction">
+    Report = pd.read_csv("D:/Queens_University/MME/Project/Zr/Tde/Run/20250810-Collection-Report-Tde-Parallel-Highest-Last.csv")
     # </editor-fold>
 
-elif Method == "ExtractIndividually":
-    print("ExtractIndividually")
+    # <editor-fold desc="Miller to Miller-Bravais">
+    # Tde = Tde[Tde["File"] == "Tde"].copy()
+    # print(ReportDf)
+    Report['DirectionMb'] = Report['Direction'].replace(Mapping)
+    # print(Tde)
+    # </editor-fold>
 
+    # <editor-fold desc="Reparameterized">
+    Report['Reparameterization'] = Report['Potential'].apply(lambda x: 'R' if x.endswith('R') else 'O')
+    # print(DfBravaisMelt)
+    # </editor-fold>
 
+    # <editor-fold desc="Polar">
+    Report[['X', 'Y', 'Z']] = Report['Direction'].apply(DirectionFunc).apply(pd.Series)
+
+    Report['R'] = np.sqrt(Report['X'] ** 2 + Report['Y'] ** 2 + Report['Z'] ** 2)
+    Report['UnitX'] = Report['X'] / Report['R']
+    Report['UnitY'] = Report['Y'] / Report['R']
+    Report['UnitZ'] = Report['Z'] / Report['R']
+
+    Report['Theta'] = np.degrees(np.arctan2(Report['UnitY'], Report['UnitX'])) % 360
+    Report['Phi'] = np.degrees(np.arccos(Report['UnitZ']))
+
+    Report[['a1', 'a2', 'a3', 'h']] = Report['DirectionMb'].apply(DirectionFunc).apply(pd.Series)
+    # </editor-fold>
+
+    # <editor-fold desc="Export">
+    Report.to_csv(PythonName + "-Report" + ".csv", index=False)
+    # </editor-fold>
+
+else:
+    Report = pd.read_csv(PythonName + "-Report" + ".csv")
+
+# <editor-fold desc="Group">
+print("Group")
+ReportGroupedTemperaturePotential = Report.groupby(['Temperature','Potential'])
+ReportGroupedTemperaturePotentialDirection = Report.groupby(['Temperature','Potential', 'Direction', 'DirectionMb', 'Reparameterization',
+                                                      'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
+                                                      'Theta', 'Phi',
+                                                      'a1', 'a2', 'a3', 'h'])
+# </editor-fold>
 # </editor-fold>
 
 # </editor-fold>
@@ -1460,35 +1492,128 @@ else:
 
 # </editor-fold>
 
+# <editor-fold desc="***** Minimization">
+print("***** Minimization")
+
+# <editor-fold desc="^^^ Dataframe">
+print("^^^ Dataframe")
+Method = "Else"
+if Method == "HighestLast":
+    # <editor-fold desc="Extraction">
+    Minimization = pd.read_csv("D:/Queens_University/MME/Project/Zr/Tde/Run/20250810-Collection-Report-Minimization-Parallel-Highest-Last.csv")
+    # </editor-fold>
+
+    # <editor-fold desc="Miller to Miller-Bravais">
+    # Tde = Tde[Tde["File"] == "Tde"].copy()
+    # print(ReportDf)
+    Minimization['DirectionMb'] = Minimization['Direction'].replace(Mapping)
+    # print(Tde)
+    # </editor-fold>
+
+    # <editor-fold desc="Reparameterized">
+    Minimization['Reparameterization'] = Minimization['Potential'].apply(lambda x: 'R' if x.endswith('R') else 'O')
+    # print(DfBravaisMelt)
+    # </editor-fold>
+
+    # <editor-fold desc="Polar">
+    Minimization[['X', 'Y', 'Z']] = Minimization['Direction'].apply(DirectionFunc).apply(pd.Series)
+
+    Minimization['R'] = np.sqrt(Report['X'] ** 2 + Minimization['Y'] ** 2 + Minimization['Z'] ** 2)
+    Minimization['UnitX'] = Minimization['X'] / Minimization['R']
+    Minimization['UnitY'] = Minimization['Y'] / Minimization['R']
+    Minimization['UnitZ'] = Minimization['Z'] / Minimization['R']
+
+    Minimization['Theta'] = np.degrees(np.arctan2(Minimization['UnitY'], Minimization['UnitX'])) % 360
+    Minimization['Phi'] = np.degrees(np.arccos(Minimization['UnitZ']))
+
+    Minimization[['a1', 'a2', 'a3', 'h']] = Minimization['DirectionMb'].apply(DirectionFunc).apply(pd.Series)
+    # </editor-fold>
+
+    # <editor-fold desc="Export">
+    Minimization.to_csv(PythonName + "-Minimization" + ".csv", index=False)
+    # </editor-fold>
+
+else:
+    Minimization = pd.read_csv(PythonName + "-Minimization" + ".csv")
+
+# <editor-fold desc="Group">
+print("Group")
+MinimizationGroupedTemperaturePotential = Minimization.groupby(['Temperature','Potential'])
+MinimizationGroupedTemperaturePotentialDirection = Minimization.groupby(['Temperature','Potential', 'Direction', 'DirectionMb', 'Reparameterization',
+                                                      'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
+                                                      'Theta', 'Phi',
+                                                      'a1', 'a2', 'a3', 'h'])
+# </editor-fold>
+# </editor-fold>
+
+# </editor-fold>
+
 # <editor-fold desc="***** Thermal">
 print("***** Thermal")
 
 # <editor-fold desc="Read">
-Thermal10 = pd.read_csv("D:/Queens_University/MME/Project/Zr/Tde/Run/10/20250506-Collection-Thermal.csv")
-Thermal300 = pd.read_csv("D:/Queens_University/MME/Project/Zr/Tde/Run/300/20250506-Collection-Thermal.csv")
-Thermal10["Temperature"] = 10
-Thermal300["Temperature"] = 300
-Thermal = pd.concat([Thermal10, Thermal300], ignore_index=True, axis=0)
+print("Read")
+Read = False
+if Read:
+    Thermal10 = pd.read_csv("D:/Queens_University/MME/Project/Zr/Tde/Run/10/20250506-Collection-Thermal.csv")
+    Thermal300 = pd.read_csv("D:/Queens_University/MME/Project/Zr/Tde/Run/300/20250506-Collection-Thermal.csv")
+    Thermal10["Temperature"] = 10
+    Thermal300["Temperature"] = 300
+    Thermal = pd.concat([Thermal10, Thermal300], ignore_index=True, axis=0)
+    Thermal.to_csv(PythonName + "-" + "Thermal.csv", sep=',', index=False)
+else:
+    Thermal = pd.read_csv(PythonName + "-Thermal" + ".csv")
 # </editor-fold>
 
 # <editor-fold desc="Plot">
-Plotting = True
+print("Plot")
+Plotting = False
 if Plotting:
-    files = Thermal['File'].unique()
+    Files = Thermal['File'].unique()
+    for File in Files:
+        ThermalFilterFile = Thermal[Thermal['File'] == File]
+        Temperatures = ThermalFilterFile['Temperature'].unique()
+        for Temperature in Temperatures:
+            Title = f"Thermal-{File}-{Temperature}"
+            ThermalFilterFileTemperature = ThermalFilterFile[ThermalFilterFile['Temperature'] == Temperature]
 
-    for f in files:
-        subset = Thermal[Thermal['File'] == f]
-        plt.figure(figsize=(6, 6))
-        sns.barplot(data=subset, x='Potential', y='EnergyPerAtom', hue='LookupWord')
-        plt.title(f'Energy per Atom vs Potential ({f})')
-        plt.xlabel('Potential')
-        plt.ylabel('Energy per Atom')
-        plt.tight_layout()
-        plt.show()
+            PotentialOrder = ["M2R", "M3R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2", "MtpPd"]
+
+            ThermalFilterFileTemperature = ThermalFilterFileTemperature.replace(
+                {'EnergyPerAtomBefore': 'Before',
+                 'EnergyPerAtomAfter': 'After',
+                 'EnergyPerAtomMin': 'Minimization',
+                 'EnergyPerAtomRandom': 'Random',
+                 'EnergyPerAtomNpt': 'NPT',
+                 'EnergyPerAtomLangevianNve': 'Langevian NVE',
+                 'EnergyPerAtomNve': 'NVE',
+                 }
+            )
+
+            plt.figure(figsize=(10, 6))
+            ax = sns.barplot(
+                data=ThermalFilterFileTemperature,
+                x='Potential',
+                y='EnergyPerAtom',
+                hue='LookupWord',
+                order=PotentialOrder
+            )
+
+            # Remove legend title
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles=handles, labels=labels, title=None)
+
+            # plt.title(f'{File} at {Temperature} K')
+            plt.xlabel('')
+            plt.ylabel('Energy per Atom (eV)')
+            plt.tight_layout()
+            plt.savefig(f"{Title}.png", dpi=600)
+            plt.show()
+
 
 # </editor-fold>
 
-
+# </editor-fold>
 # </editor-fold>
 
 # <editor-fold desc="######################################## Ws vs. Distance">
@@ -2100,97 +2225,186 @@ if Active:
 # <editor-fold desc="######################################## Energy per atom">
 print("######################################## Energy per atom") # %%
 
-# <editor-fold desc="***** Plot">
-print("***** Plot")
-Active = True
+# <editor-fold desc="***** Merging-Temperature,Potential">
+Active=True
 if Active:
-    for Potential in Tde["Potential"].unique():
-        DfFilteredPotential = Tde[Tde["Potential"] == Potential]
-        Equilibrium = Thermal[(Thermal["Potential"] == Potential) &
-                         (Thermal["File"] == "Equilibrium") &
-                         (Thermal["LookupWord"] == "EnergyPerAtomAfter")]["EnergyPerAtom"].iloc[0]
-        Thermalization = Thermal[(Thermal["Potential"] == Potential) &
-                            (Thermal["File"] == "Thermalization") &
-                            (Thermal["LookupWord"] == "EnergyPerAtomNve")]["EnergyPerAtom"].iloc[0]
+    print("***** Merging-Temperature,Potential")
+    ThermalEquilibrium = Thermal[
+        (Thermal["File"] == "Equilibrium") &
+        (Thermal["LookupWord"] == "EnergyPerAtomAfter")
+    ][["Potential", "EnergyPerAtom", "Temperature"]].copy()
+    ThermalEquilibrium["Type"] = "Equilibrium"
+    ThermalEquilibrium = ThermalEquilibrium.rename(columns={"EnergyPerAtom": "Energy"})
 
-        for File in Tde["File"].unique():
-            if File in ["Tde", "Minimization"]:
-                fig, axs = plt.subplots(figsize=(4.5, 4))
-                Title = Potential + "-" + File
-                print(Title)
+    ThermalThermalization = Thermal[
+        (Thermal["File"] == "Thermalization") &
+        (Thermal["LookupWord"] == "EnergyPerAtomNve")
+    ][["Potential", "EnergyPerAtom", "Temperature"]].copy()
+    ThermalThermalization["Type"] = "Thermalization"
+    ThermalThermalization = ThermalThermalization.rename(columns={"EnergyPerAtom": "Energy"})
 
-                DfFilteredPotentialFile = DfFilteredPotential[DfFilteredPotential["File"] == File]
+    ThermalCombined = pd.concat([ThermalEquilibrium, ThermalThermalization], ignore_index=True)
 
-                hue_mapping = {
-                    "EnergyPerAtomBefore": "Before",
-                    "EnergyPerAtomAfter": "After"
-                }
-                DfFilteredPotentialFile = DfFilteredPotentialFile.copy()
-                DfFilteredPotentialFile["LookupWord"] = DfFilteredPotentialFile["LookupWord"].map(hue_mapping)
+    ReportFiltered = Report[["Temperature", "Potential", "EnergyTotalPerAtom"]].copy()
+    ReportFiltered = ReportFiltered.rename(columns={"EnergyTotalPerAtom": "Energy"})
+    ReportFiltered["Type"] = "TDE"
 
-                # Set seaborn style
-                sns.set(style="whitegrid")
+    MinimizationFiltered = Minimization[["Temperature", "Potential", "EnergyTotalPerAtom"]].copy()
+    MinimizationFiltered = MinimizationFiltered.rename(columns={"EnergyTotalPerAtom": "Energy"})
+    MinimizationFiltered["Type"] = "Minimization"
 
-                # Create the plot
-                g = sns.catplot(
-                    data=DfFilteredPotentialFile,
-                    estimator='mean',
-                    x="File",
-                    y="EnergyPerAtom",
-                    hue="LookupWord",
-                    col='DirectionMb',
-                    col_wrap=5,
-                    kind="bar",
-                    height=2,
-                    aspect=1.2,
-                    legend=False
-                )
+    EnergyPerAtomTemperaturePotential = pd.concat([ThermalCombined, ReportFiltered], ignore_index=True)
+    EnergyPerAtomTemperaturePotential = pd.concat([EnergyPerAtomTemperaturePotential, MinimizationFiltered], ignore_index=True)
+    EnergyPerAtomTemperaturePotential.to_csv(PythonName + "-EnergyPerAtomTemperaturePotential.csv", index=False)
 
-                g.set_ylabels("")
-                g.set_xlabels("")
-                g.set_xticklabels("")
+else:
+    Thermal = pd.read_csv(PythonName + "-EnergyPerAtomTemperaturePotential" + ".csv")
+# </editor-fold>
 
-                # g._legend.set_title("")
+# <editor-fold desc="***** Plot-Temperature,Potential">
+print("***** Plot-Temperature,Potential")
+Active = False
+if Active:
+    PotentialOrder = ["M2", "M2R", "M3", "M3R", "BMD192", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
+    Title = "EnergyPerAtomTemperaturePotential"
+    g = sns.catplot(
+        data=EnergyPerAtomTemperaturePotential,
+        kind="bar",
+        x="Potential",
+        y="Energy",
+        hue="Type",
+        col="Temperature",
+        col_wrap=2,              # 2 columns of subplots
+        order=PotentialOrder,
+        height=5,
+        aspect=1
+    )
+    for ax in g.axes.flat:
+        label = ax.get_title().replace("Temperature = ", "").strip()
+        ax.set_title(f"{label} K")
 
-                g.fig.text(-0.00, 0.5, "Energy Per Atom (eV)", va='center', rotation='vertical', fontsize=12)
+    g.set_axis_labels("", "Energy per Atom (eV)")
+    g.set_xticklabels(rotation=45)
+    g.tight_layout()
+    g.savefig(PythonName + "-" + Title + ".png", dpi=600, bbox_inches="tight", transparent=True)
+    plt.show()
+# </editor-fold>
 
-                for ax in g.axes.flat:
-                    ymin = Equilibrium-0.005
-                    ymax = DfFilteredPotentialFile["EnergyPerAtom"].max() + 0.005
-                    ax.set_ylim(ymin, ymax)
-                    ax.axhline(y=Equilibrium, color='b', linestyle='-', label="Equilibrium")
-                    ax.axhline(y=Thermalization, color='r', linestyle='-', label="Thermalization")
-                    ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+# <editor-fold desc="***** Merging-Temperature,Potential,Direction">
+print("***** Merging-Temperature,Potential,Direction")
+Active=False
+if Active:
+    ThermalEquilibrium = Thermal[
+        (Thermal["File"] == "Equilibrium") &
+        (Thermal["LookupWord"] == "EnergyPerAtomAfter")
+    ][["Potential", "EnergyPerAtom", "Temperature"]].copy()
+    ThermalEquilibrium["Type"] = "Equilibrium"
+    ThermalEquilibrium = ThermalEquilibrium.rename(columns={"EnergyPerAtom": "Energy"})
 
-                g.set_titles("Direction: {col_name}")
+    ThermalThermalization = Thermal[
+        (Thermal["File"] == "Thermalization") &
+        (Thermal["LookupWord"] == "EnergyPerAtomNve")
+    ][["Potential", "EnergyPerAtom", "Temperature"]].copy()
+    ThermalThermalization["Type"] = "Thermalization"
+    ThermalThermalization = ThermalThermalization.rename(columns={"EnergyPerAtom": "Energy"})
 
-                legend_elements = [
-                    mpatches.Patch(color="b", label="Before"),
-                    mpatches.Patch(color="peru", label="After"),
-                    Line2D([0], [0], color='b', lw=2, label='Equilibrium'),
-                    Line2D([0], [0], color='r', lw=2, label='Thermalization')
-                ]
+    unique_dirs = Report["DirectionMb"].dropna().unique()
 
-                plt.legend(handles=legend_elements, bbox_to_anchor=(-1.5, -0.1), loc='center', ncol=4, frameon=False,
-                           prop={'weight': 'normal', 'size': 12})
-                # plt.tight_layout()
-                plt.subplots_adjust(left=0.070, bottom=None, right=None, top=None, wspace=None, hspace=None)
-                plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
-                plt.show()
-                plt.close()
+    ThermalThermalization = pd.concat(
+        [ThermalThermalization.assign(DirectionMb=dm) for dm in unique_dirs],
+        ignore_index=True
+    )
+
+    ThermalEquilibrium = pd.concat(
+        [ThermalEquilibrium.assign(DirectionMb=dm) for dm in unique_dirs],
+        ignore_index=True
+    )
+
+    ThermalCombined = pd.concat([ThermalEquilibrium, ThermalThermalization], ignore_index=True)
+
+    ReportFiltered = Report[["Temperature", "Potential", "DirectionMb", "EnergyTotalPerAtom"]].copy()
+    ReportFiltered = ReportFiltered.rename(columns={"EnergyTotalPerAtom": "Energy"})
+    ReportFiltered["Type"] = "TDE"
+
+    MinimizationFiltered = Minimization[["Temperature", "Potential", "DirectionMb", "EnergyTotalPerAtom"]].copy()
+    MinimizationFiltered = MinimizationFiltered.rename(columns={"EnergyTotalPerAtom": "Energy"})
+    MinimizationFiltered["Type"] = "Minimization"
+
+    EnergyPerAtomTemperaturePotentialDirection = pd.concat([ThermalCombined, ReportFiltered, MinimizationFiltered], ignore_index=True)
+    EnergyPerAtomTemperaturePotentialDirection.to_csv(PythonName + "-EnergyPerAtomTemperaturePotentialDirection.csv", index=False)
+
+else:
+    Thermal = pd.read_csv(PythonName + "-EnergyPerAtomTemperaturePotentialDirection" + ".csv")
+# </editor-fold>
+
+# <editor-fold desc="***** Plot-Temperature,Potential,Direction">
+print("***** Plot-Temperature,Potential,Direction")
+Active = False
+if Active:
+    df = EnergyPerAtomTemperaturePotentialDirection.copy()
+    df["DirectionMb"] = df["DirectionMb"].apply(LatexFriendlyFunc)
+    df = df[df["Type"].isin(["TDE", "Minimization"])]
+
+    DirectionOrder = sorted(df["DirectionMb"].unique())
+    PotentialOrder = ["M2", "M2R", "M3", "M3R", "BMD192", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
+
+    marker_size = 10  # doubled marker size (default ~5)
+
+    g = sns.relplot(
+        data=df,
+        kind="line",
+        x="DirectionMb",
+        y="Energy",
+        hue="Potential",
+        style="Type",
+        markers=True,
+        dashes=False,
+        row="Temperature",
+        hue_order=PotentialOrder,
+        height=3.5,
+        aspect=4,
+        linewidth=1.2,
+        facet_kws={"sharex": True, "sharey": True}
+    )
+
+    # Update the marker size after plotting
+    for ax in g.axes.flatten():
+        for line in ax.lines:
+            line.set_markersize(marker_size)
+
+    g.set_titles("{row_name} K")
+
+    # Rotate x-axis tick labels, remove individual axis labels
+    for ax in g.axes.flatten():
+        ax.tick_params(axis='x', rotation=90)
+        ax.set_xlabel("")      # Remove x-axis labels
+        ax.set_ylabel("")      # Remove y-axis labels on subplots
+
+    # Shared y-axis label, moved left and increased font size
+    g.fig.text(-0.01, 0.5, "Energy Per Atom (eV)", va='center', rotation='vertical', fontsize=20)
+
+    # Increase legend font size safely if legend exists
+    if g._legend is not None:
+        g._legend.set_title(g._legend.get_title().get_text(), prop={'size':20})
+        for text in g._legend.get_texts():
+            text.set_fontsize(20)
+
+    g.tight_layout()
+    g.savefig(PythonName + "-EnergyPerAtomTemperaturePotentialDirection.png",
+              dpi=600, bbox_inches="tight", transparent=True)
+    plt.show()
 # </editor-fold>
 
 # </editor-fold>
 
 # <editor-fold desc="######################################## Probability">
 print("######################################## Probability") # %%
-Active=False
+Active=True
 if Active:
-
     # <editor-fold desc="Literature">
-    Ackland = pd.read_csv("D:\Queens_University\Literature\Ackland.csv", usecols=["T", "Dir", "Complete"])
+    Ackland = pd.read_csv("D:\Queens_University\MME\Literature\Ackland.csv", usecols=["T", "Dir", "Complete"])
     Ackland = Ackland[Ackland['Complete'] == True]
-    Griffiths = pd.read_csv("D:\Queens_University\Literature\Griffiths.csv", usecols=["T", "Dir"])
+    Griffiths = pd.read_csv("D:\Queens_University\MME\Literature\Griffiths.csv", usecols=["T", "Dir"])
     # print(Griffiths)
     Ackland['DirectionMb'] = Ackland['Dir'].apply(new_column_name)
     Griffiths['DirectionMb'] = Griffiths['Dir'].apply(new_column_name)
@@ -2200,10 +2414,10 @@ if Active:
     Plotting = False
     if Plotting:
         Title = "DfTdeBox"
-        Tde = Tde.copy()
-        Tde['DirectionMb'] = Tde['DirectionMb'].apply(LatexFriendlyFunc)
+        TdeWs = TdeWs.copy()
+        TdeWs['DirectionMb'] = TdeWs['DirectionMb'].apply(LatexFriendlyFunc)
         plt.figure(figsize=(10, 7))  # Your preferred figure size
-        sns.boxplot(data=Tde, x='DirectionMb', y="Energy", hue="Potential")
+        sns.boxplot(data=TdeWs, x='DirectionMb', y="Energy", hue="Potential")
 
         plt.xlabel("PKA Direction")
         plt.ylabel("PKA Energy (eV)")
@@ -2237,7 +2451,7 @@ if Active:
     # <editor-fold desc="Plotting-Probability">
     Plotting = False
     if Plotting:
-        for Name, Group in TdeGroupedPotentialDirection:
+        for Name, Group in TdeWsGroupedPotentialDirection:
             print(Name)
             Potential = Name[0]
             Direction = Name[1]
@@ -2409,7 +2623,7 @@ if Active:
 
     # <editor-fold desc="Plotting-Probability-PotentialListReparamterized">
     print("Plotting-Probability-PotentialListReparamterized")
-    Plotting = False
+    Plotting = True
     if Plotting:
         Iteration = 0
         PotentialList = ["M2R", "M3R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2"]
@@ -2424,21 +2638,23 @@ if Active:
             "TabGap1": Colors[3],
             "TabGap2": Colors[4],
         }
-        for Name, Group in TdeGroupedPotential:
-            # print(Name)
+        for Name, Group in TdeWsGroupedPotential:
+            print(Name)
             # print(Group.columns.tolist())
-            Potential = Name
+            Potential = Name[0]
+            print(Potential)
             # Direction = Name[1]
             if Potential in PotentialList:
                 print(Name)
                 print(Group.columns.tolist())
                 # print(Group)
                 GroupDropped = Group.drop(columns=['Potential', 'Try', 'DirectionMb', 'Direction',
-                                                  'File', 'LookupWord', 'EnergyPerAtom', 'Reparameterization',
-                                                  'X', 'Y', 'Z', 'R',
-                                                  'UnitX', 'UnitY', 'UnitZ',
-                                                  'Theta', 'Phi',
-                                                  'a1', 'a2', 'a3', 'h'])
+                                                   'File', 'LookupWord', 'EnergyPerAtom',
+                                                   'Reparameterization',
+                                                   'X', 'Y', 'Z', 'R',
+                                                   'UnitX', 'UnitY', 'UnitZ',
+                                                   'Theta', 'Phi',
+                                                   'a1', 'a2', 'a3', 'h'])
                 print(GroupDropped.columns.tolist())
                 GroupValues = GroupDropped.values
                 # print(GroupValues)
@@ -2452,14 +2668,16 @@ if Active:
 
                 sns.kdeplot(data=GroupValuesFlattenNp,
                             cumulative=True, lw=2,
-                            color= ColorsDic[Potential],
+                            color=ColorsDic[Potential],
                             label=Name,
                             linestyle=LineStyle,
                             )
                 Iteration += 1
+
         plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
 
-        plt.step([0, 21, 30, 50, 110, 150], [0, 0.16, 0.55, 0.61, 1, 1], 'black', linewidth=3.5, where='post', label="Biget")
+        plt.step([0, 21, 30, 50, 110, 150], [0, 0.16, 0.55, 0.61, 1, 1], 'black', linewidth=3.5, where='post',
+                 label="Biget")
         bar_gap = 1
         # Temperature ranges and corresponding values
 
@@ -2479,7 +2697,7 @@ if Active:
         #          horizontalalignment='left', fontsize=FontSize, fontstyle='italic')
 
         plt.text(20 + SpaceH, 0, '%0', verticalalignment='bottom', horizontalalignment='left',
-                 fontsize=FontSize, fontstyle='italic',color='black')
+                 fontsize=FontSize, fontstyle='italic', color='black')
         plt.text(30 + SpaceH, 0.16, '%16', verticalalignment='bottom', horizontalalignment='left',
                  fontsize=FontSize, fontstyle='italic')
         plt.text(50 + SpaceH, 0.53, '%55', verticalalignment='bottom', horizontalalignment='left',
@@ -2495,10 +2713,23 @@ if Active:
         plt.ylim(0, 1)  # Set y-axis limits
         plt.xlim(0, 200)  # Set x-axis limits
         # plt.xticks([0,21,30,50,110])
+
         handles, labels = plt.gca().get_legend_handles_labels()
         # order = [1, 2, 0, 3, 4, 5] # when no original version is added
-        order = [0, 1, 2, 3, 4, 5, 6, 7] # when original versions are added
-        plt.legend([handles[idx] for idx in order],[labels[idx] for idx in order],frameon=False, fontsize=15, loc='center',bbox_to_anchor=(0.75, 0.27),labelspacing=0.2 )
+        order = [0, 1, 2, 3, 4, 5, 6, 7]  # when original versions are added
+
+        # Filter order to only valid indices
+        valid_order = [idx for idx in order if idx < len(handles)]
+
+        plt.legend(
+            [handles[idx] for idx in valid_order],
+            [labels[idx] for idx in valid_order],
+            frameon=False,
+            fontsize=15,
+            loc='center',
+            bbox_to_anchor=(0.75, 0.27),
+            labelspacing=0.2
+        )
         plt.grid(False)
         plt.tight_layout()
         plt.savefig(PythonName + "-" + "All" + "-Prob.png", bbox_inches='tight')
@@ -2507,9 +2738,10 @@ if Active:
     # </editor-fold>
 
     # <editor-fold desc="Plotting-Probability-ecdfplot">
-    Plotting = False
+    Plotting = True
     if Plotting:
-        sns.ecdfplot(data=DfBravaisMelt, x="Tde",
+        sns.ecdfplot(data=TdeWs,
+                     x="Energy",
                      # cumulative=True,
                      hue="Potential",
                      lw=3.5,
@@ -2550,9 +2782,10 @@ if Active:
     # </editor-fold>
 
     # <editor-fold desc="Plotting-Probability-ecdf">
-    Plotting = False
+    Plotting = True
     if Plotting:
-        sns.ecdfplot(data=DfBravaisMelt, x="Tde",
+        sns.ecdfplot(data=TdeWs,
+                     x="Energy",
                      # cumulative=True,
                      hue="Potential",
                      lw=3.5,
