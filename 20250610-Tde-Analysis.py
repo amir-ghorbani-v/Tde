@@ -248,11 +248,25 @@ colors = [
     "#dbdb8d",  # Light Olive
     "#9edae5",  # Light Cyan
 ]
-Colors = ["b", "cyan", "darkred", "red", "green", "lime", "w", "#FF5733", "#33FF57", "#5733FF", "#FF5733", "#33FF57",
+Colors = ["b", "cyan", "darkred", "red", "green", "lime", "purple", "magenta", "darkgoldenrod", "#FF5733", "#33FF57", "#5733FF", "#FF5733", "#33FF57",
           "#5733FF", "#FF5733", "#33FF57", "#5733FF", "#FF5733", "#33FF57", "#5733FF"]
-Colors = ["b", "cyan", "white", "darkred", "red", "white", "green", "lime", "w", "#FF5733", "#33FF57", "#5733FF",
-          "#FF5733", "#33FF57", "#5733FF", "#FF5733", "#33FF57", "#5733FF", "#FF5733", "#33FF57", "#5733FF"]
-Colors = ["b", "red", "green", "purple", "darkgoldenrod"]
+# Colors = ["b", "cyan", "white", "darkred", "red", "white", "green", "lime", "w", "#FF5733", "#33FF57", "#5733FF",
+#           "#FF5733", "#33FF57", "#5733FF", "#FF5733", "#33FF57", "#5733FF", "#FF5733", "#33FF57", "#5733FF"]
+# Colors = ["b", "red", "green", "purple", "darkgoldenrod"]
+#
+# Colors = ["blue", "red", "green", "purple", "darkgoldenrod", "magenta"]
+
+ColorsDic = {
+    "M2R": Colors[0],
+    "M2": Colors[1],
+    "M3R": Colors[2],
+    "M3": Colors[3],
+    "BMD192R": Colors[4],
+    "BMD192": Colors[5],
+    "TabGap1": Colors[6],
+    "TabGap2": Colors[7],
+    "MtpPd": Colors[8],
+}
 
 Mapping = {
     'dir_1_2_1': 'dir_1_2_-3_1',
@@ -2695,16 +2709,7 @@ if Active:
         Iteration = 0
         PotentialList = ["M2R", "M3R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2"]
         # PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2"]
-        ColorsDic = {
-            "M2": Colors[0],
-            "M2R": Colors[0],
-            "M3": Colors[1],
-            "M3R": Colors[1],
-            "BMD192": Colors[2],
-            "BMD192R": Colors[2],
-            "TabGap1": Colors[3],
-            "TabGap2": Colors[4],
-        }
+
         for Name, Group in TdeWsGroupedPotential:
             print(Name)
             # print(Group.columns.tolist())
@@ -2932,18 +2937,6 @@ if Active:
     if Plotting:
         # PotentialList = ["M2R", "M3R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2"]
         PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
-        Colors = ["blue", "red", "green", "purple", "darkgoldenrod", "magenta"]
-        ColorsDic = {
-            "M2": Colors[0],
-            "M2R": Colors[0],
-            "M3": Colors[1],
-            "M3R": Colors[1],
-            "BMD192": Colors[2],
-            "BMD192R": Colors[2],
-            "TabGap1": Colors[3],
-            "TabGap2": Colors[4],
-            "MtpPd": Colors[5],
-        }
 
         LineStyleDic = {
             "M2": "dashed",  # or alternatively '--'
@@ -4069,6 +4062,50 @@ if Active:
 # <editor-fold desc="######################################## Inverse Pole Figure">
 print("######################################## Inverse Pole Figure") # %%
 
+# <editor-fold desc="***** Plot-inverse pole figures-Yu">
+print("***** Plot-inverse pole figures-Yu")
+Active = False
+if Active:
+    Z1 = [[1,1,1,1,1,1,1],[2,2,2,2,2,2,2],[3,3,3,3,3,3,3],[4,4,4,4,4,4,4],[5,5,5,5,5,5,5],[6,6,6,6,6,6,6],[7,7,7,7,7,7,7]]
+
+    from mpl_toolkits.mplot3d import Axes3D
+    from scipy.interpolate import griddata
+
+    # plt.style.use('seaborn-white')
+    angle = 30
+    angle_rad = np.deg2rad(angle)
+
+    points = 7
+    r = np.linspace(0.001, 1, 7)
+    theta = np.linspace(-angle_rad, angle_rad, points)
+    r, theta = np.meshgrid(r, theta)
+    X = r * np.cos(theta)
+    Y = r * np.sin(theta)
+
+
+    r = np.linspace(0.001, 1, 800)
+    theta = np.linspace(-angle_rad, angle_rad, 800)
+    r, theta = np.meshgrid(r, theta)
+    X1 = r * np.cos(theta)
+    Y1 = r * np.sin(theta)
+
+    Z = griddata((X.flatten(), Y.flatten()), np.array(Z1).flatten(), (X1, Y1), method='cubic')
+
+    plt.figure(figsize=(8, 6))
+
+    # Plot the sector using a colormap
+    plt.pcolormesh(X1, Y1, Z, cmap='coolwarm', vmin=0, vmax=35)
+
+    # Add a color bar
+    cbar=plt.colorbar(pad=0.08)
+    plt.axis('off')
+    cbar.set_label('Threshold displacement energy(eV)', fontsize=12)
+    plt.tight_layout()
+    plt.legend(fontsize=15)
+    plt.savefig("./figure_tde_GAP_surface.jpg",dpi=600, bbox_inches='tight')
+    plt.show()
+# </editor-fold>
+
 # <editor-fold desc="***** Plot-inverse pole figures-example-TdeGroupedPotential">
 print("***** Plot-inverse pole figures-example-TdeGroupedPotential")
 Active = False
@@ -4118,7 +4155,7 @@ if Active:
 # </editor-fold>
 
 # <editor-fold desc="***** Plot-inverse pole figures-contour and points-TdeGroupedPotentialDirectionDescribe">
-Active = True
+Active = False
 if Active:
     print("***** Plot-inverse pole figures-contour and points-TdeGroupedPotentialDirectionDescribe")
     BasedList = ["min", "mean"]
@@ -4719,50 +4756,6 @@ if Active:
                         plt.close()
                         LabelCounter += 1
             # </editor-fold>
-
-# <editor-fold desc="***** Plot-inverse pole figures-Yu">
-print("***** Plot-inverse pole figures-Yu")
-Active = False
-if Active:
-    Z1 = [[1,1,1,1,1,1,1],[2,2,2,2,2,2,2],[3,3,3,3,3,3,3],[4,4,4,4,4,4,4],[5,5,5,5,5,5,5],[6,6,6,6,6,6,6],[7,7,7,7,7,7,7]]
-
-    from mpl_toolkits.mplot3d import Axes3D
-    from scipy.interpolate import griddata
-
-    # plt.style.use('seaborn-white')
-    angle = 30
-    angle_rad = np.deg2rad(angle)
-
-    points = 7
-    r = np.linspace(0.001, 1, 7)
-    theta = np.linspace(-angle_rad, angle_rad, points)
-    r, theta = np.meshgrid(r, theta)
-    X = r * np.cos(theta)
-    Y = r * np.sin(theta)
-
-
-    r = np.linspace(0.001, 1, 800)
-    theta = np.linspace(-angle_rad, angle_rad, 800)
-    r, theta = np.meshgrid(r, theta)
-    X1 = r * np.cos(theta)
-    Y1 = r * np.sin(theta)
-
-    Z = griddata((X.flatten(), Y.flatten()), np.array(Z1).flatten(), (X1, Y1), method='cubic')
-
-    plt.figure(figsize=(8, 6))
-
-    # Plot the sector using a colormap
-    plt.pcolormesh(X1, Y1, Z, cmap='coolwarm', vmin=0, vmax=35)
-
-    # Add a color bar
-    cbar=plt.colorbar(pad=0.08)
-    plt.axis('off')
-    cbar.set_label('Threshold displacement energy(eV)', fontsize=12)
-    plt.tight_layout()
-    plt.legend(fontsize=15)
-    plt.savefig("./figure_tde_GAP_surface.jpg",dpi=600, bbox_inches='tight')
-    plt.show()
-# </editor-fold>
 # </editor-fold>
 
 
@@ -4770,10 +4763,11 @@ if Active:
 
 # <editor-fold desc="######################################## Report">
 print("######################################## Report")  # %%
+
+# <editor-fold desc="***** Single">
+print("***** Single")
 Active = False
 if Active:
-    # <editor-fold desc="***** Single">
-    print("***** Single")
 
     # <editor-fold desc="Excess">
     print("Excess")
@@ -4806,10 +4800,10 @@ if Active:
         # ReportDfFiltered = ReportDfFiltered[ReportDfFiltered['Try'].isin(TryList)]
         # ReportDfFiltered = ReportDfFiltered[ReportDfFiltered['Direction'].isin(DirectionList)].reset_index(drop=True)
 
-        # TimeMatch = ReportDfMinDist[
-        #     (ReportDfMinDist['Potential'] == "M3R") &
-        #     (ReportDfMinDist['Try'] == 1) &
-        #     (ReportDfMinDist['Direction'] == "dir_-1_2_0")
+        # TimeMatch = ReportMinDist[
+        #     (ReportMinDist['Potential'] == "M3R") &
+        #     (ReportMinDist['Try'] == 1) &
+        #     (ReportMinDist['Direction'] == "dir_-1_2_0")
         # ]
         #
         # if not TimeMatch.empty:
@@ -4877,10 +4871,10 @@ if Active:
         # ReportDfFiltered = ReportDfFiltered[ReportDfFiltered['Try'].isin(TryList)]
         # ReportDfFiltered = ReportDfFiltered[ReportDfFiltered['Direction'].isin(DirectionList)].reset_index(drop=True)
 
-        # TimeMatch = ReportDfMinDist[
-        #     (ReportDfMinDist['Potential'] == "M3R") &
-        #     (ReportDfMinDist['Try'] == 1) &
-        #     (ReportDfMinDist['Direction'] == "dir_-1_2_0")
+        # TimeMatch = ReportMinDist[
+        #     (ReportMinDist['Potential'] == "M3R") &
+        #     (ReportMinDist['Try'] == 1) &
+        #     (ReportMinDist['Direction'] == "dir_-1_2_0")
         # ]
         #
         # if not TimeMatch.empty:
@@ -4945,10 +4939,10 @@ if Active:
         # ReportDfFiltered = ReportDfFiltered[ReportDfFiltered['Try'].isin(TryList)]
         # ReportDfFiltered = ReportDfFiltered[ReportDfFiltered['Direction'].isin(DirectionList)].reset_index(drop=True)
 
-        # TimeMatch = ReportDfMinDist[
-        #     (ReportDfMinDist['Potential'] == "M3R") &
-        #     (ReportDfMinDist['Try'] == 1) &
-        #     (ReportDfMinDist['Direction'] == "dir_-1_2_0")
+        # TimeMatch = ReportMinDist[
+        #     (ReportMinDist['Potential'] == "M3R") &
+        #     (ReportMinDist['Try'] == 1) &
+        #     (ReportMinDist['Direction'] == "dir_-1_2_0")
         # ]
         #
         # if not TimeMatch.empty:
@@ -5012,10 +5006,10 @@ if Active:
         # ReportDfFiltered = ReportDfFiltered[ReportDfFiltered['Try'].isin(TryList)]
         # ReportDfFiltered = ReportDfFiltered[ReportDfFiltered['Direction'].isin(DirectionList)].reset_index(drop=True)
 
-        # TimeMatch = ReportDfMinDist[
-        #     (ReportDfMinDist['Potential'] == "M3R") &
-        #     (ReportDfMinDist['Try'] == 1) &
-        #     (ReportDfMinDist['Direction'] == "dir_-1_2_0")
+        # TimeMatch = ReportMinDist[
+        #     (ReportMinDist['Potential'] == "M3R") &
+        #     (ReportMinDist['Try'] == 1) &
+        #     (ReportMinDist['Direction'] == "dir_-1_2_0")
         # ]
         #
         # if not TimeMatch.empty:
@@ -5079,10 +5073,10 @@ if Active:
         # ReportDfFiltered = ReportDfFiltered[ReportDfFiltered['Try'].isin(TryList)]
         # ReportDfFiltered = ReportDfFiltered[ReportDfFiltered['Direction'].isin(DirectionList)].reset_index(drop=True)
 
-        # TimeMatch = ReportDfMinDist[
-        #     (ReportDfMinDist['Potential'] == "M3R") &
-        #     (ReportDfMinDist['Try'] == 1) &
-        #     (ReportDfMinDist['Direction'] == "dir_-1_2_0")
+        # TimeMatch = ReportMinDist[
+        #     (ReportMinDist['Potential'] == "M3R") &
+        #     (ReportMinDist['Try'] == 1) &
+        #     (ReportMinDist['Direction'] == "dir_-1_2_0")
         # ]
         #
         # if not TimeMatch.empty:
@@ -5133,22 +5127,23 @@ if Active:
         plt.close()
     # </editor-fold>
 
-    # </editor-fold>
+# </editor-fold>
 
-    # <editor-fold desc="***** MinDist">
-    print("***** MinDist")
-
+# <editor-fold desc="***** MinDist">
+print("***** MinDist")
+Active = True
+if Active:
     # <editor-fold desc="Min of MinDist">
     print("Min of MinDist")
     Active = True
     if Active:
         # print(ReportDf['Potential'].unique())
-        ReportDfMinDistIdxmin = ReportDf.groupby(['Potential', 'Try', 'Direction', 'Energy'])['MinDist'].idxmin()
-        ReportDfMinDist = ReportDf.loc[ReportDfMinDistIdxmin].reset_index(drop=True)
-        ReportDfMinDist.to_csv(PythonName + "-ReportDfMinDist" + ".csv", index=False)
+        ReportDfMinDistIdxmin = Report.groupby(['Temperature', 'Potential', 'Try', 'Direction', 'Energy'])['MinDist'].idxmin()
+        ReportMinDist = Report.loc[ReportDfMinDistIdxmin].reset_index(drop=True)
+        ReportMinDist.to_csv(PythonName + "-ReportMinDist" + ".csv", index=False)
     else:
-        ReportDfMinDist = pd.read_csv(PythonName + "-ReportDfMinDist" + ".csv")
-        # print(ReportDfMinDist['Potential'].unique())
+        ReportMinDist = pd.read_csv(PythonName + "-ReportMinDist" + ".csv")
+        # print(ReportMinDist['Potential'].unique())
     # </editor-fold>
 
     # <editor-fold desc="Stat">
@@ -5156,8 +5151,8 @@ if Active:
     from scipy import stats
 
     ReportDfMinDistStat = (
-        ReportDfMinDist
-        .groupby(['Potential', 'Direction', 'DirectionMb'], as_index=False)
+        ReportMinDist
+        .groupby(['Temperature','Potential', 'Direction', 'DirectionMb'], as_index=False)
         .agg(
             MinDist_mean=('MinDist', 'mean'),
             MinDist_median=('MinDist', 'median'),
@@ -5176,9 +5171,22 @@ if Active:
     # <editor-fold desc="Group">
     print("Group")
     # print(Tde)
-    ReportDfMinDistGroupedPotential = ReportDfMinDist.groupby(['Potential'])
-    ReportDfMinDistGroupedPotentialDirection = ReportDfMinDist.groupby(
+    ReportMinDistGroupedTemperature = ReportMinDist.groupby(['Temperature'])
+
+    ReportMinDistGroupedPotential = ReportMinDist.groupby(['Potential'])
+    ReportMinDistGroupedPotentialDirection = ReportMinDist.groupby(
         ['Potential',
+         'Direction', 'DirectionMb',
+         'Reparameterization',
+         'X', 'Y', 'Z', 'R',
+         'UnitX', 'UnitY', 'UnitZ',
+         'Theta', 'Phi',
+         'a1', 'a2', 'a3', 'h'])
+
+    ReportMinDistGroupedTemperaturePotential = ReportMinDist.groupby(['Temperature', 'Potential'])
+    ReportMinDistGroupedTemperaturePotentialDirection = ReportMinDist.groupby(
+        ['Temperature',
+         'Potential',
          'Direction', 'DirectionMb',
          'Reparameterization',
          'X', 'Y', 'Z', 'R',
@@ -5195,57 +5203,60 @@ if Active:
     Plotting = False
     if Plotting:
         import math
-        # print(ReportDfMinDist['Potential'].unique())
-        Title = "ReportDfMinDistGroupedPotentialDirection-Bar"
-        PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2"]
-        ReportDfMinDistFiltered = ReportDfMinDist[ReportDfMinDist['Potential'].isin(PotentialList)]
-        ReportDfMinDistFiltered = ReportDfMinDistFiltered.reset_index()
-        ReportDfMinDistFiltered['DirectionMb'] = ReportDfMinDistFiltered['DirectionMb'].apply(LatexFriendlyFunc)
-        # print(ReportDfMinDistFiltered['Potential'].unique())
-        order = (
-            ReportDfMinDistFiltered
-            .groupby("Potential")["MinDist"]
-            .mean()
-            .sort_values()
-            .index
-        )
 
-        # Order for Directions (hue/colors)
-        hue_order = (
-            ReportDfMinDistFiltered
-            .groupby("DirectionMb")["MinDist"]
-            .mean()
-            .sort_values()
-            .index
-        )
+        Title = "ReportMinDistGroupedTemperature-Bar"
+        PotentialOrder = ["M2R", "M3R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2", "MtpPd"]
+        PotentialList = PotentialOrder  # same set
 
-        plt.figure(figsize=(7, 7))
-        sns.barplot(
-            data=ReportDfMinDistFiltered,
-            x="Potential",
-            y="MinDist",
-            hue="DirectionMb",
-            order=order,
-            hue_order=hue_order
-        )
-        num_entries = len(ReportDfMinDistFiltered['DirectionMb'].unique())
-        ncol_legend = math.ceil(num_entries / 8)
-        plt.legend(
-            fontsize=12,
-            loc='lower center',
-            bbox_to_anchor=(0.5, 0),  # Move outside the plot
-            ncol=ncol_legend
-        )
-        ymin, ymax = plt.ylim()
-        plt.yticks(np.arange(ymin, ymax + 0.5, 0.5), fontsize=24)
-        plt.xticks(fontsize=20)
-        plt.xlabel('')
-        plt.ylabel("Min Dist (Å)", fontsize=24)
-        # plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
-        plt.show()
-        plt.close()
+        for Name, Group in ReportMinDistGroupedTemperature:
+
+            Group = Group[Group['Potential'].isin(PotentialList)].reset_index(drop=True)
+            if Group.empty:
+                continue
+
+            Group['DirectionMb'] = Group['DirectionMb'].apply(LatexFriendlyFunc)
+
+            # keep only potentials that exist in group but keep global ordering
+            order = [p for p in PotentialOrder if p in Group['Potential'].unique()]
+
+            # compute direction ordering per group
+            hue_order = (
+                Group
+                .groupby("DirectionMb")["MinDist"]
+                .mean()
+                .sort_values()
+                .index
+            )
+
+            plt.figure(figsize=(10, 10))
+            sns.barplot(
+                data=Group,
+                x="Potential",
+                y="MinDist",
+                hue="DirectionMb",
+                order=order,
+                hue_order=hue_order
+            )
+
+            num_entries = Group['DirectionMb'].nunique()
+            ncol_legend = math.ceil(num_entries / 8)
+
+            plt.legend(
+                fontsize=12,
+                loc='lower center',
+                bbox_to_anchor=(0.5, 0),
+                ncol=ncol_legend
+            )
+
+            ymin, ymax = plt.ylim()
+            plt.yticks(np.arange(ymin, ymax + 0.5, 0.5), fontsize=24)
+            plt.xticks(fontsize=20)
+            plt.xlabel('')
+            plt.ylabel("Min Dist (Å)", fontsize=24)
+            plt.tight_layout()
+            plt.savefig(f"{PythonName}-{Title}-{Name}", dpi=600, bbox_inches='tight', transparent=False)
+            plt.show()
+            plt.close()
     # </editor-fold>
 
     # <editor-fold desc="Plotting-TDE Min Scatter - All">
@@ -5254,47 +5265,39 @@ if Active:
     if Plotting:
         import math
 
-        Title = "ReportDfMinDistGroupedPotentialDirection-Scatter-All"
+        PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
 
-        # Filter potentials
-        PotentialList = ["M2R", "M3R", "BME192R", "TabGap1", "TabGap2"]
-        ReportDfMinDistFiltered = ReportDfMinDist[ReportDfMinDist['Potential'].isin(PotentialList)].reset_index()
+        for Name, Group in ReportMinDistGroupedTemperature:
+            Temperature = Name[0]
+            print(Temperature)
+            Title = "ReportMinDistGroupedPotentialDirection-Scatter-" + str(Temperature)
 
-        plt.figure(figsize=(6, 6))
-        sns.scatterplot(
-            data=ReportDfMinDistFiltered,
-            x='MinDist',
-            y='Energy',
-            hue='Potential',
-            alpha=0.75,
-            # edgecolor='k',
-            s=100,  # marker size
-            # style = "Potential"
-        )
+            ReportDfMinDistFiltered = (
+                Group[Group['Potential'].isin(PotentialList)]
+                .reset_index(drop=True)
+            )
 
-        # Legend formatting
-        num_entries = len(ReportDfMinDistFiltered['Potential'].unique())
-        ncol_legend = math.ceil(num_entries / 2)
-        # plt.legend(
-        #     fontsize=16,
-        #     loc='upper right',
-        #     bbox_to_anchor=(1, 1),
-        #     ncol=ncol_legend
-        # )
-        plt.legend('', frameon=False)
+            plt.figure(figsize=(6, 6))
+            sns.scatterplot(
+                data=ReportDfMinDistFiltered,
+                x='MinDist',
+                y='Energy',
+                hue='Potential',
+                hue_order=PotentialList,  # enforce legend order
+                palette=ColorsDic,
+                alpha=0.75,
+                s=100
+            )
 
-        plt.xticks(np.arange(1.4, 2.2, 0.2), fontsize=24)
-        plt.yticks(fontsize=20)
-
-        # Axis labels
-        plt.xlabel("Min Dist (Å)", fontsize=24)
-        plt.ylabel("TDE (eV)", fontsize=24)
-        plt.tight_layout()
-        # plt.xscale('log')
-        # plt.yscale('log')
-        plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
-        plt.show()
-        plt.close()
+            plt.legend(frameon=False)
+            plt.xticks(fontsize=24)
+            plt.yticks(fontsize=20)
+            plt.xlabel("Min Dist (Å)", fontsize=24)
+            plt.ylabel("TDE (eV)", fontsize=24)
+            plt.tight_layout()
+            plt.savefig(f"{PythonName}-{Title}", dpi=600, bbox_inches='tight')
+            plt.show()
+            plt.close()
     # </editor-fold>
 
     # <editor-fold desc="Plotting-TDE Min Scatter-One">
@@ -5303,10 +5306,10 @@ if Active:
     if Plotting:
         import math
         PotentialList = ["M2R", "M3R", "BME192R", "TabGap1", "TabGap2"]
-        ReportDfMinDistFiltered = ReportDfMinDist[ReportDfMinDist['Potential'].isin(PotentialList)].reset_index()
+        ReportDfMinDistFiltered = ReportMinDist[ReportMinDist['Potential'].isin(PotentialList)].reset_index()
         for Name, Group in ReportDfMinDistFiltered.groupby("Potential"):
             print(Name)
-            Title = "ReportDfMinDistGroupedPotential-Scatter-One-" + str(Name)
+            Title = "ReportMinDistGroupedPotential-Scatter-One-" + str(Name)
             plt.figure(figsize=(6, 6))
             sns.scatterplot(
                 data=Group,
@@ -5345,55 +5348,60 @@ if Active:
             plt.close()
     # </editor-fold>
 
-    # <editor-fold desc="Plotting-TDE Min Scatter-One with FacetGrid">
-    print("Plotting-TDE Min Scatter-One with FacetGrid")
+    # <editor-fold desc="Plotting-TDE Min Scatter-One with FacetGrid by Temperature">
+    print("Plotting-TDE Min Scatter-One with FacetGrid by Temperature")
     Plotting = False
     if Plotting:
         import math
 
-        PotentialList = ["M2R", "M3R", "BME192R", "TabGap1", "TabGap2"]
-        ReportDfMinDistFiltered = ReportDfMinDist[ReportDfMinDist['Potential'].isin(PotentialList)].reset_index()
-        ReportDfMinDistFiltered['DirectionMb'] = ReportDfMinDistFiltered['DirectionMb'].apply(LatexFriendlyFunc)
-        Title = "ReportDfMinDistGroupedPotential-Scatter-One-Facet"
+        PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
 
-        # Create FacetGrid with 2 rows × 2 columns
-        g = sns.FacetGrid(
-            ReportDfMinDistFiltered,
-            col="Potential",
-            col_wrap=2,   # 2 columns
-            height=4,
-            sharex=True,
-            sharey=True
-        )
+        for Name, Group in ReportMinDistGroupedTemperature:
+            Temperature = Name[0]
+            print(Temperature)
+            Title = f"ReportMinDistGroupedPotential-Scatter-One-Facet-T{Temperature}"
 
-        # Scatterplot inside each facet
-        g.map_dataframe(
-            sns.scatterplot,
-            x='MinDist',
-            y='Energy',
-            hue='DirectionMb',
-            palette="Set1",
-            edgecolor='none',
-            s=100
-        )
+            ReportDfMinDistFiltered = (
+                Group[Group['Potential'].isin(PotentialList)]
+                .reset_index(drop=True)
+            )
+            ReportDfMinDistFiltered['DirectionMb'] = ReportDfMinDistFiltered['DirectionMb'].apply(LatexFriendlyFunc)
 
-        # g.add_legend()
-        # g._legend.set_title("DirectionMb")
+            # Create FacetGrid with 2 columns
+            g = sns.FacetGrid(
+                ReportDfMinDistFiltered,
+                col="Potential",
+                col_wrap=3,
+                height=4,
+                sharex=True,
+                sharey=True
+            )
 
-        # Format ticks, limits, remove axis labels
-        for ax, title in zip(g.axes.flatten(), g.col_names):
-            ax.set_xticks(np.arange(1.4, 2.2, 0.2))
-            ax.set_yticks(np.arange(0, 150, 40))
-            ax.set_xlim([1.3, 2.2])
-            ax.set_ylim([5, 150])
-            ax.set_xlabel("")   # remove xlabel
-            ax.set_ylabel("")   # remove ylabel
-            ax.set_title(title, fontsize=18)  # clean title without "Potential = "
+            # Scatterplot inside each facet
+            g.map_dataframe(
+                sns.scatterplot,
+                x='MinDist',
+                y='Energy',
+                hue='DirectionMb',
+                palette="Set1",
+                edgecolor='none',
+                s=100
+            )
 
-        plt.tight_layout()
-        plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
-        plt.show()
-        plt.close()
+            # Format ticks, limits, remove axis labels, clean titles
+            for ax, title in zip(g.axes.flatten(), g.col_names):
+                # ax.set_xticks(np.arange(1.4, 2.2, 0.2))
+                # ax.set_yticks(np.arange(0, 150, 40))
+                # ax.set_xlim([1.3, 2.2])
+                # ax.set_ylim([5, 150])
+                ax.set_xlabel("")
+                ax.set_ylabel("")
+                ax.set_title(title, fontsize=18)
+
+            plt.tight_layout()
+            plt.savefig(f"{PythonName}-{Title}", dpi=600, bbox_inches='tight')
+            plt.show()
+            plt.close()
     # </editor-fold>
 
     # <editor-fold desc="Plotting-TDE Min Scatter-Direction - All">
@@ -5402,7 +5410,7 @@ if Active:
     if Plotting:
         import math
 
-        Title = "ReportDfMinDistGroupedPotentialDirection-Scatter-Direction-All"
+        Title = "ReportMinDistGroupedPotentialDirection-Scatter-Direction-All"
 
         # Filter potentials
         PotentialList = ["M2R", "M3R", "BME192R", "TabGap1", "TabGap2"]
@@ -5436,7 +5444,7 @@ if Active:
                          # "dir_-1_3_0",
                          # "dir_0_4_1"
                          ]
-        ReportDfMinDistFiltered = ReportDfMinDist[ReportDfMinDist['Potential'].isin(PotentialList)].reset_index()
+        ReportDfMinDistFiltered = ReportMinDist[ReportMinDist['Potential'].isin(PotentialList)].reset_index()
         ReportDfMinDistFiltered = ReportDfMinDistFiltered[ReportDfMinDistFiltered['Direction'].isin(DirectionList)].reset_index()
 
         plt.figure(figsize=(6, 6))
@@ -5463,10 +5471,10 @@ if Active:
         plt.legend('', frameon=False)
 
 
-        plt.xticks(np.arange(1.4, 2.2, 0.1), fontsize=24)
-        plt.yticks(np.arange(15, 46, 10), fontsize=24)
-        plt.xlim([1.55, 1.8])
-        plt.ylim([15, 45])
+        # plt.xticks(np.arange(1.4, 2.2, 0.1), fontsize=24)
+        # plt.yticks(np.arange(15, 46, 10), fontsize=24)
+        # plt.xlim([1.55, 1.8])
+        # plt.ylim([15, 45])
 
         # Axis labels
         plt.xlabel("TDE (eV)", fontsize=24)
@@ -5479,96 +5487,99 @@ if Active:
         plt.close()
     # </editor-fold>
 
-    # <editor-fold desc="Plotting-TDE Min Scatter-Direction - One with Regression">
-    print("Plotting-TDE Min Scatter-Direction - One with Regression")
+    # <editor-fold desc="Plotting-TDE Min Scatter-Direction - Nested Loops with Regression">
+    print("Plotting-TDE Min Scatter-Direction - Nested Loops with Regression")
     Plotting = False
     if Plotting:
-        PotentialList = ["M2R", "M3R", "BME192R", "TabGap1", "TabGap2"]
-        DirectionList = ["dir_-1_2_0"]
-        # DirectionList = ["dir_0_1_2"]
-        # print(ReportDfMinDist['Direction'])
+        PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
+        PotentialList = ["MtpPd"]
 
-        ReportDfMinDistFiltered = ReportDfMinDist[
-            ReportDfMinDist['Potential'].isin(PotentialList)
-        ].reset_index(drop=True)
+        for Name, Group in ReportMinDistGroupedTemperature:
+            Temperature = Name[0]
+            print(f"Temperature: {Temperature}")
 
-        ReportDfMinDistFiltered = ReportDfMinDistFiltered[
-            ReportDfMinDistFiltered['Direction'].isin(DirectionList)
-        ].reset_index(drop=True)
+            # Filter potentials
+            TempGroupFiltered = Group[Group['Potential'].isin(PotentialList)].reset_index(drop=True)
 
-        for Name, Group in ReportDfMinDistFiltered.groupby("Potential"):
-            print(Name)
-            Title = "ReportDfMinDistGroupedPotentialDirection-Scatter-One-" + str(Name)
-            plt.figure(figsize=(6, 6))
+            for Potential in PotentialList:
+                GroupPotential = TempGroupFiltered[TempGroupFiltered['Potential'] == Potential].reset_index(drop=True)
+                if GroupPotential.empty:
+                    continue
 
-            # Linear regression fit
-            slope, intercept, r_value, p_value, std_err = linregress(Group['MinDist'], Group['Energy'])
-            slope_int = int(round(slope))
-            intercept_int = int(round(intercept))
-            print(f"{Name}: slope={slope_int}, intercept={intercept_int}")
+                Directions = GroupPotential['Direction'].unique()
+                for Direction in Directions:
+                    GroupDir = GroupPotential[GroupPotential['Direction'] == Direction].reset_index(drop=True)
+                    if GroupDir.empty:
+                        continue
 
-            # Plot regression line first (behind scatter)
-            x_vals = np.linspace(Group['MinDist'].min(), Group['MinDist'].max(), 100)
-            y_vals = slope * x_vals + intercept
-            plt.plot(x_vals, y_vals, 'r--', zorder=1)  # regression line
+                    # print(f"Potential: {Potential}, Direction: {Direction}")
+                    Title = f"ReportMinDist-T{Temperature}-{Potential}-{Direction}-Scatter"
 
-            # Scatter plot (above line)
-            sns.scatterplot(
-                data=Group,
-                x='MinDist',
-                y='Energy',
-                hue='Potential',
-                alpha=0.75,
-                s=400,
-                zorder=2
-            )
+                    plt.figure(figsize=(6, 6))
 
-            # Mean point for Group
-            mean_x = Group['MinDist'].mean()
-            mean_y = Group['Energy'].mean()
-            plt.scatter(mean_x, mean_y, color="red", edgecolor = "black", marker="*", s=500, zorder=3)
+                    # Linear regression
+                    slope, intercept, r_value, p_value, std_err = linregress(GroupDir['MinDist'], GroupDir['Energy'])
+                    slope_int = int(round(slope))
+                    intercept_int = int(round(intercept))
+                    std_err_int = int(round(std_err))
+                    print(f"{Potential}-{Direction}: slope={slope_int}, intercept={intercept_int}, SE={std_err_int}")
 
-            # Annotate slope & intercept
-            plt.text(
-                0.3, 0.95,
-                f"Slope = {slope_int}\nIntercept = {intercept_int}",
-                transform=plt.gca().transAxes,
-                fontsize=40,
-                verticalalignment='top',
-                bbox=dict(facecolor="none", edgecolor="none")
-            )
+                    # Regression line
+                    x_vals = np.linspace(GroupDir['MinDist'].min(), GroupDir['MinDist'].max(), 100)
+                    y_vals = slope * x_vals + intercept
+                    plt.plot(x_vals, y_vals, 'r--', zorder=1)
 
-            # Legend formatting
-            plt.legend('', frameon=False)
+                    # Scatter points
+                    sns.scatterplot(
+                        data=GroupDir,
+                        x='MinDist',
+                        y='Energy',
+                        hue='Potential',
+                        alpha=0.75,
+                        s=400,
+                        zorder=2
+                    )
 
-            # plt.xticks(np.arange(1.4, 2.2, 0.1), fontsize=50)
-            # plt.yticks(np.arange(15, 46, 10), fontsize=50)
-            # plt.xlim([1.55, 1.8])
-            # plt.ylim([15, 45])
+                    # Mean point
+                    mean_x = GroupDir['MinDist'].mean()
+                    mean_y = GroupDir['Energy'].mean()
+                    plt.scatter(mean_x, mean_y, color="red", edgecolor="black", marker="*", s=500, zorder=3)
 
-            # Hide spines
-            ax = plt.gca()
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
+                    # Annotate slope & intercept
+                    plt.text(
+                        0.3, 0.95,
+                        f"Slope = {slope_int}\nIntercept = {intercept_int}\nSE = {std_err_int}",
+                        transform=plt.gca().transAxes,
+                        fontsize=40,
+                        verticalalignment='top',
+                        bbox=dict(facecolor="none", edgecolor="none")
+                    )
 
-            plt.xlabel("", fontsize=24)
-            plt.ylabel("", fontsize=24)
-            plt.tight_layout()
+                    plt.legend('', frameon=False)
 
-            # Save & show
-            plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight', transparent=True)
-            plt.show()
-            plt.close()
+                    ax = plt.gca()
+                    ax.spines['right'].set_visible(False)
+                    ax.spines['top'].set_visible(False)
+
+                    plt.xlabel("Min Dist (Å)", fontsize=24)
+                    plt.ylabel("TDE (eV)", fontsize=24)
+                    plt.tight_layout()
+
+                    # Save & show
+                    plt.savefig(f"{PythonName}-{Title}", dpi=600, bbox_inches='tight', transparent=True)
+                    plt.show()
+                    plt.close()
     # </editor-fold>
 
     # <editor-fold desc="Regression">
     print("Regression")
     ReportDfMinDistRegression = []
 
-    for (Potential, Direction,DirectionMb), group in ReportDfMinDist.groupby(["Potential", "Direction", "DirectionMb"]):
+    for (Temperature, Potential, Direction,DirectionMb), group in ReportMinDist.groupby(["Temperature", "Potential", "Direction", "DirectionMb"]):
         if len(group) >= 2:  # Need at least 2 points for regression
             slope, intercept, r_value, p_value, std_err = linregress(group["MinDist"], group["Energy"])
             ReportDfMinDistRegression.append({
+                "Temperature": Temperature,
                 "Potential": Potential,
                 "Direction": Direction,
                 "DirectionMb": DirectionMb,
@@ -5587,47 +5598,39 @@ if Active:
     print("Regression-Heatmap")
     Plotting = False
     if Plotting:
-        for Parameter in ["Slope","Intercept"]:
-            DirectionList = ["dir_0_1_2"]
-            ReportDfMinDistRegressionFiltered = ReportDfMinDistRegression[
-                ~ReportDfMinDistRegression['Direction'].isin(DirectionList)
-            ].reset_index(drop=True)
-            ReportDfMinDistRegressionFiltered['DirectionMb'] = ReportDfMinDistRegressionFiltered['DirectionMb'].apply(LatexFriendlyFunc)
-            Title = "ReportDfMinDistRegressionFiltered-" + Parameter
+        for Temp, TempDf in ReportDfMinDistRegression.groupby("Temperature"):
+            print("Temperature:", Temp)
 
-            # direction_order = (
-            #     ReportDfMinDistRegression
-            #     .groupby("DirectionMb")[Parameter]
-            #     .mean()
-            #     .sort_values()
-            #     .index
-            # )
+            for Parameter in ["Slope", "Intercept", "Std_err"]:
+                print(Parameter)
+                DirectionList = ["dir_0_1_2"]
+                ReportDfMinDistRegressionFiltered = TempDf.copy()
+                ReportDfMinDistRegressionFiltered['DirectionMb'] = (
+                    ReportDfMinDistRegressionFiltered['DirectionMb'].apply(LatexFriendlyFunc)
+                )
+                Title = f"ReportDfMinDistRegressionFiltered-{Temp}-{Parameter}"
 
-            HeatMap = ReportDfMinDistRegressionFiltered.pivot(
-                index="Potential",
-                columns="DirectionMb",
-                values=Parameter
-            )
-            HeatMap = HeatMap.rename(columns=str)
+                HeatMap = ReportDfMinDistRegressionFiltered.pivot(
+                    index="Potential",
+                    columns="DirectionMb",
+                    values=Parameter
+                )
+                HeatMap = HeatMap.rename(columns=str)
 
-            # HeatMap = HeatMap[direction_order]
+                plt.figure(figsize=(15, 5))
+                sns.heatmap(
+                    HeatMap,
+                    annot=False,
+                    cmap="coolwarm",
+                    cbar_kws={'label': str(Parameter)}
+                )
+                plt.xlabel("")
+                plt.ylabel("")
+                plt.tight_layout()
+                plt.savefig(PythonName + "-" + Title, dpi=600)
+                plt.show()
+                plt.close()
 
-            plt.figure(figsize=(15, 5))
-            sns.heatmap(
-                HeatMap,
-                annot=False,
-                # fmt=".0f",
-                cmap="coolwarm",
-                cbar_kws={'label': str(Parameter)}
-            )
-
-            # plt.title("Slope Heatmap (Energy vs MinDist)")
-            plt.xlabel("")
-            plt.ylabel("")
-            plt.tight_layout()
-            plt.savefig(PythonName + "-" + Title, dpi=600)
-            plt.show()
-            plt.close()
     # </editor-fold>
 
     # <editor-fold desc="Plotting-TDE Min Kde">
@@ -5636,46 +5639,36 @@ if Active:
     if Plotting:
         import math
 
-        Title = "ReportDfMinDistGroupedPotentialDirection-Kde-All"
-
-        # Filter potentials
         PotentialList = ["M2R", "M3R", "BME192R", "TabGap1", "TabGap2"]
-        ReportDfMinDistFiltered = ReportDfMinDist[ReportDfMinDist['Potential'].isin(PotentialList)].reset_index()
 
-        plt.figure(figsize=(6, 6))
-        sns.kdeplot(
-            data=ReportDfMinDistFiltered,
-            x="MinDist", y="Energy",
-            hue="Potential",
-            # fill=True,
-            alpha=0.8, levels=10
-        )
+        for Temp, TempDf in ReportMinDist.groupby("Temperature"):
+            print(Temp)
+            TempDf = TempDf[TempDf['Potential'].isin(PotentialList)].reset_index(drop=True)
+            if TempDf.empty:
+                continue
 
-        # Legend formatting
-        num_entries = len(ReportDfMinDistFiltered['Potential'].unique())
-        ncol_legend = math.ceil(num_entries / 2)
-        # plt.legend(
-        #     fontsize=16,
-        #     loc='upper right',
-        #     bbox_to_anchor=(1, 1),
-        #     ncol=ncol_legend
-        # )
-        plt.legend('', frameon=False)
+            Title = f"ReportMinDistGroupedPotentialDirection-Kde-{Temp}"
 
-        plt.xticks(np.arange(1.4, 2.2, 0.2), fontsize=24)
-        plt.yticks(np.arange(0, 140, 20), fontsize=20)
-        plt.xlim([1.3, 2.2])
-        plt.ylim([5, 130])
+            plt.figure(figsize=(6, 6))
+            sns.kdeplot(
+                data=TempDf,
+                x="MinDist", y="Energy",
+                hue="Potential",
+                alpha=0.8, levels=10
+            )
 
-        # Axis labels
-        plt.xlabel("Min Dist (Å)", fontsize=24)
-        plt.ylabel("TDE (eV)", fontsize=24)
-        plt.tight_layout()
-        # plt.xscale('log')
-        # plt.yscale('log')
-        plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
-        plt.show()
-        plt.close()
+            num_entries = len(TempDf['Potential'].unique())
+            ncol_legend = math.ceil(num_entries / 2)
+
+            plt.legend(frameon=False)
+
+            plt.xlabel("Min Dist (Å)", fontsize=24)
+            plt.ylabel("TDE (eV)", fontsize=24)
+            plt.tight_layout()
+            plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
+            plt.show()
+            plt.close()
+
     # </editor-fold>
 
     # <editor-fold desc="Plotting-TDE-Min-Kde-One-Mean">
@@ -5688,83 +5681,75 @@ if Active:
         import matplotlib.pyplot as plt
 
         PotentialList = ["M2R", "M3R", "BME192R", "TabGap1", "TabGap2"]
-        ReportDfMinDistFiltered = ReportDfMinDist[ReportDfMinDist['Potential'].isin(PotentialList)].reset_index()
 
-        for Name, Group in ReportDfMinDistFiltered.groupby("Potential"):
-            print(Name)
-            Title = "ReportDfMinDistGroupedPotentialDirection-Kde-One-" + str(Name)
-            plt.figure(figsize=(6, 6))
+        for Temp, TempDf in ReportMinDist.groupby("Temperature"):
+            TempDf = TempDf[TempDf['Potential'].isin(PotentialList)].reset_index(drop=True)
+            if TempDf.empty:
+                continue
 
-            # KDE density
-            sns.kdeplot(
-                data=Group,
-                x="MinDist", y="Energy",
-                alpha=0.8, levels=10
-            )
+            for Name, Group in TempDf.groupby("Potential"):
+                print("T", Temp, "Potential", Name)
 
-            # Overlay stars for each Direction (from grouped means)
-            GroupMean = ReportDfMinDistStat[ReportDfMinDistStat['Potential'] == Name]
-            GroupMean = GroupMean.nsmallest(2, 'MinDist_var')
-            DirectionList = ["dir_0_0_1", "dir_-1_2_0", "dir_1_0_0", "dir_-1_1_0",'dir_-1_2_0','dir_-1_2_3']
-            GroupMean = GroupMean[GroupMean['Direction'].isin(DirectionList)].reset_index()
-            GroupMean['DirectionMb'] = GroupMean['DirectionMb'].apply(LatexFriendlyFunc)
-            # putting stars for each mean
-            # plt.scatter(
-            #     GroupMean['MinDist_mean'],
-            #     GroupMean['Energy_mean'],
-            #     marker="*",
-            #     color="red",
-            #     s=400,
-            #     edgecolor="black",
-            #     linewidth=1.2,
-            #     zorder=3
-            # )
+                Title = f"ReportMinDistGroupedPotentialDirection-Kde-One-{Name}-T{Temp}"
+                plt.figure(figsize=(6, 6))
 
-            for i, (_, row) in enumerate(GroupMean.iterrows()):
-                shift = (-1) ** i * 0.2  # alternates: +0.1, -0.1, +0.1, ...
-                plt.text(
-                    row['MinDist_mean'] + shift,  # apply alternating horizontal shift
-                    row['Energy_mean'] + shift,
-                    row['DirectionMb'],
-                    fontsize=24,
-                    color="black",
-                    weight="bold",
-                    ha="center", va="center"
-                )
-                plt.scatter(
-                    row['MinDist_mean'],
-                    row['Energy_mean'],
-                    marker="*",
-                    color="red",
-                    s=400,
-                    edgecolor="black",
-                    linewidth=1.2,
-                    zorder=3
+                sns.kdeplot(
+                    data=Group,
+                    x="MinDist", y="Energy",
+                    alpha=0.8, levels=10
                 )
 
-            # Legend formatting
-            plt.legend('', frameon=False)
-            plt.title(Name, fontsize=30)
+                GroupMean = ReportDfMinDistStat[
+                    (ReportDfMinDistStat['Potential'] == Name) &
+                    (ReportDfMinDistStat['Temperature'] == Temp)
+                    ]
+                GroupMean = GroupMean.nsmallest(2, 'MinDist_var')
 
-            plt.xticks(np.arange(1.4, 2.2, 0.2), fontsize=30)
-            plt.yticks(np.arange(0, 140, 40), fontsize=30)
-            plt.xlim([1.3, 2.2])
-            plt.ylim([5, 140])
+                DirectionList = ["dir_0_0_1", "dir_-1_2_0", "dir_1_0_0", "dir_-1_1_0", "dir_-1_2_0", "dir_-1_2_3"]
+                GroupMean = GroupMean[GroupMean['Direction'].isin(DirectionList)].reset_index(drop=True)
+                GroupMean['DirectionMb'] = GroupMean['DirectionMb'].apply(LatexFriendlyFunc)
 
-            ax = plt.gca()
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
+                for i, (_, row) in enumerate(GroupMean.iterrows()):
+                    shift = (-1) ** i * 0.2
+                    plt.text(
+                        row['MinDist_mean'] + shift,
+                        row['Energy_mean'] + shift,
+                        row['DirectionMb'],
+                        fontsize=24,
+                        color="black",
+                        weight="bold",
+                        ha="center", va="center"
+                    )
+                    plt.scatter(
+                        row['MinDist_mean'],
+                        row['Energy_mean'],
+                        marker="*",
+                        color="red",
+                        s=400,
+                        edgecolor="black",
+                        linewidth=1.2,
+                        zorder=3
+                    )
 
-            # plt.xlabel("Min Dist (Å)", fontsize=24)
-            # plt.ylabel("TDE (eV)", fontsize=24)
-            plt.xlabel("", fontsize=24)
-            plt.ylabel("", fontsize=24)
-            plt.tight_layout()
+                plt.legend('', frameon=False)
+                plt.title(Name, fontsize=30)
+                # plt.xticks(np.arange(1.4, 2.2, 0.2), fontsize=30)
+                # plt.yticks(np.arange(0, 140, 40), fontsize=30)
+                # plt.xlim([1.3, 2.2])
+                # plt.ylim([5, 140])
 
-            # Save & show
-            plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight', transparent=True)
-            plt.show()
-            plt.close()
+                ax = plt.gca()
+                ax.spines['right'].set_visible(False)
+                ax.spines['top'].set_visible(False)
+
+                plt.xlabel("", fontsize=24)
+                plt.ylabel("", fontsize=24)
+                plt.tight_layout()
+
+                plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight', transparent=True)
+                plt.show()
+                plt.close()
+
     # </editor-fold>
 
     # <editor-fold desc="Plotting-TDE Min Convex">
@@ -5774,49 +5759,45 @@ if Active:
         import math
         from scipy.spatial import ConvexHull
 
-        Title = "ReportDfMinDistGroupedPotentialDirection-Convex"
-
-        # Filter potentials
         PotentialList = ["M2R", "M3R", "BME192R", "TabGap1", "TabGap2"]
-        ReportDfMinDistFiltered = ReportDfMinDist[ReportDfMinDist['Potential'].isin(PotentialList)].reset_index()
 
-        plt.figure(figsize=(6, 6))
+        for Temp, TempDf in ReportMinDist.groupby("Temperature"):
+            TempDf = TempDf[TempDf['Potential'].isin(PotentialList)].reset_index(drop=True)
+            if TempDf.empty:
+                continue
 
+            Title = f"ReportMinDistGroupedPotentialDirection-Convex-T{Temp}"
 
-        for Name, Group in ReportDfMinDistFiltered.groupby("Potential"):
-            hull = ConvexHull(Group[["MinDist", "Energy"]])
-            plt.fill(
-                Group.iloc[hull.vertices]["MinDist"],
-                Group.iloc[hull.vertices]["Energy"],
-                alpha=0.5, label=Name
-            )
+            plt.figure(figsize=(6, 6))
 
-        # Legend formatting
-        num_entries = len(ReportDfMinDistFiltered['Potential'].unique())
-        ncol_legend = math.ceil(num_entries / 2)
-        # plt.legend(
-        #     fontsize=16,
-        #     loc='upper right',
-        #     bbox_to_anchor=(1, 1),
-        #     ncol=ncol_legend
-        # )
-        plt.legend('', frameon=False)
+            for Name, Group in TempDf.groupby("Potential"):
+                if len(Group) < 3:
+                    continue  # convex hull needs at least 3 points
 
-        plt.xticks(np.arange(1.4, 2.2, 0.2), fontsize=24)
-        plt.yticks(fontsize=20)
+                hull = ConvexHull(Group[["MinDist", "Energy"]])
+                plt.fill(
+                    Group.iloc[hull.vertices]["MinDist"],
+                    Group.iloc[hull.vertices]["Energy"],
+                    alpha=0.5,
+                    label=Name
+                )
 
-        # Axis labels
-        plt.xlabel("Min Dist (Å)", fontsize=24)
-        plt.ylabel("TDE (eV)", fontsize=24)
-        plt.tight_layout()
-        # plt.xscale('log')
-        # plt.yscale('log')
-        plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
-        plt.show()
-        plt.close()
-    # </editor-fold>
+            plt.legend('', frameon=False)
+
+            # plt.xticks(np.arange(1.4, 2.2, 0.2), fontsize=24)
+            # plt.yticks(fontsize=20)
+
+            plt.xlabel("Min Dist (Å)", fontsize=24)
+            plt.ylabel("TDE (eV)", fontsize=24)
+            plt.tight_layout()
+
+            plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
+            plt.show()
+            plt.close()
 
     # </editor-fold>
+
+# </editor-fold>
 # </editor-fold>
 
 # <editor-fold desc="######################################## Formation Energy">
