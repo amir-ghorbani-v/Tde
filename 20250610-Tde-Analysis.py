@@ -688,8 +688,11 @@ if Active:
     Tde['UnitY'] = Tde['Y'] / Tde['R']
     Tde['UnitZ'] = Tde['Z'] / Tde['R']
 
-    Tde['Theta'] = np.degrees(np.arctan2(Tde['UnitY'], Tde['UnitX'])) % 360
-    Tde['Phi'] = np.degrees(np.arccos(Tde['UnitZ']))
+    # Theta: angle from normal (001)
+    Tde['Theta'] = np.degrees(np.arccos(Tde['UnitZ']))  # 0 = parallel to [001], 90 = perpendicular
+
+    # Phi: azimuth on 001 plane (projection in XY)
+    Tde['Phi'] = np.degrees(np.arctan2(Tde['UnitY'], Tde['UnitX'])) % 360
 
     Tde[['a1', 'a2', 'a3', 'h']] = Tde['DirectionMb'].apply(DirectionFunc).apply(pd.Series)
     # </editor-fold>
@@ -697,8 +700,8 @@ if Active:
     # <editor-fold desc="Type Division">
     print("Type Division")
     # print(Tde)
-    TdeDt = Tde.drop(columns=['DefectWs'])
-    TdeWs = Tde.drop(columns=['DefectDt'])
+    TdeWs = Tde.drop(columns=['DefectWs'])
+    TdeDt = Tde.drop(columns=['DefectDt'])
     # </editor-fold>
 
     # <editor-fold desc="Defect Detection Methods">
@@ -719,12 +722,12 @@ if Active:
     TdeDtGroupedPotential = TdeDt.groupby(['Potential'])
     TdeDtGroupedPotentialTemperature = TdeDt.groupby(['Temperature', 'Potential'])
     TdeDtGroupedPotentialDirection = TdeDt.groupby(['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
-    TdeDtGroupedPotentialDirectionTemperature = TdeDt.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+    TdeDtGroupedTemperaturePotentialDirection = TdeDt.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
 
     TdeWsGroupedPotential = TdeWs.groupby(['Potential'])
     TdeWsGroupedPotentialTemperature = TdeWs.groupby(['Temperature', 'Potential'])
     TdeWsGroupedPotentialDirection = TdeWs.groupby(['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
-    TdeWsGroupedPotentialDirectionTemperature = TdeWs.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
+    TdeWsGroupedTemperaturePotentialDirection = TdeWs.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
 
     # for group in TdeGroupedPotentialDirection:
     #     print(group)
@@ -757,10 +760,10 @@ if Active:
 
     TdeGroupedPotentialDirectionTemperatureStd = TdeGroupedPotentialDirectionTemperature.std(numeric_only=True).reset_index()
     TdeGroupedPotentialDirectionTemperatureDescribe = TdeGroupedPotentialDirectionTemperature["Energy"].describe().reset_index()
-    TdeDtGroupedPotentialDirectionTemperatureStd = TdeDtGroupedPotentialDirectionTemperature.std(numeric_only=True).reset_index()
-    TdeDtGroupedPotentialDirectionTemperatureDescribe = TdeDtGroupedPotentialDirectionTemperature["Energy"].describe().reset_index()
-    TdeWsGroupedPotentialDirectionTemperatureStd = TdeWsGroupedPotentialDirectionTemperature.std(numeric_only=True).reset_index()
-    TdeWsGroupedPotentialDirectionTemperatureDescribe = TdeWsGroupedPotentialDirectionTemperature["Energy"].describe().reset_index()
+    TdeDtGroupedPotentialDirectionTemperatureStd = TdeDtGroupedTemperaturePotentialDirection.std(numeric_only=True).reset_index()
+    TdeDtGroupedTemperaturePotentialDirectionDescribe = TdeDtGroupedTemperaturePotentialDirection["Energy"].describe().reset_index()
+    TdeWsGroupedPotentialDirectionTemperatureStd = TdeWsGroupedTemperaturePotentialDirection.std(numeric_only=True).reset_index()
+    TdeWsGroupedTemperaturePotentialDirectionDescribe = TdeWsGroupedTemperaturePotentialDirection["Energy"].describe().reset_index()
     # </editor-fold>
 
     # <editor-fold desc="Export">
@@ -774,13 +777,13 @@ if Active:
     TdeDtGroupedPotentialDescribe.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDescribe.csv", sep=',', index=False)
     TdeDtGroupedPotentialTemperatureDescribe.to_csv(PythonName + "-" + "TdeDtGroupedPotentialTemperatureDescribe.csv", sep=',', index=False)
     TdeDtGroupedPotentialDirectionDescribe.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionDescribe.csv", sep=',', index=False)
-    TdeDtGroupedPotentialDirectionTemperatureDescribe.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureDescribe.csv", sep=',', index=False)
+    TdeDtGroupedTemperaturePotentialDirectionDescribe.to_csv(PythonName + "-" + "TdeDtGroupedTemperaturePotentialDirectionDescribe.csv", sep=',', index=False)
 
     TdeWs.to_csv(PythonName + "-TdeWs" + ".csv", index=False)
     TdeWsGroupedPotentialDescribe.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDescribe.csv", sep=',', index=False)
     TdeWsGroupedPotentialTemperatureDescribe.to_csv(PythonName + "-" + "TdeWsGroupedPotentialTemperatureDescribe.csv", sep=',', index=False)
     TdeWsGroupedPotentialDirectionDescribe.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionDescribe.csv", sep=',', index=False)
-    TdeWsGroupedPotentialDirectionTemperatureDescribe.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureDescribe.csv", sep=',', index=False)
+    TdeWsGroupedTemperaturePotentialDirectionDescribe.to_csv(PythonName + "-" + "TdeWsGroupedTemperaturePotentialDirectionDescribe.csv", sep=',', index=False)
     # </editor-fold>
 
 else:
@@ -794,13 +797,13 @@ else:
     TdeDtGroupedPotentialDescribe = pd.read_csv(PythonName + "-" + "TdeDtGroupedPotentialDescribe.csv")
     TdeDtGroupedPotentialTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeDtGroupedPotentialTemperatureDescribe.csv")
     TdeDtGroupedPotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionDescribe.csv")
-    TdeDtGroupedPotentialDirectionTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureDescribe.csv")
+    TdeDtGroupedTemperaturePotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "TdeDtGroupedTemperaturePotentialDirectionDescribe.csv")
 
     TdeWs = pd.read_csv(PythonName + "-TdeWs" + ".csv")
     TdeWsGroupedPotentialDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedPotentialDescribe.csv")
     TdeWsGroupedPotentialTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedPotentialTemperatureDescribe.csv")
     TdeWsGroupedPotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionDescribe.csv")
-    TdeWsGroupedPotentialDirectionTemperatureDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureDescribe.csv")
+    TdeWsGroupedTemperaturePotentialDirectionDescribe = pd.read_csv(PythonName + "-" + "TdeWsGroupedTemperaturePotentialDirectionDescribe.csv")
 
 # </editor-fold>
 
@@ -817,14 +820,14 @@ TdeDtGroupedPotential = TdeDt.groupby(['Potential'])
 TdeDtGroupedPotentialTemperature = TdeDt.groupby(['Temperature', 'Potential'])
 TdeDtGroupedPotentialDirection = TdeDt.groupby(['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
      'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
-TdeDtGroupedPotentialDirectionTemperature = TdeDt.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY',
+TdeDtGroupedTemperaturePotentialDirection = TdeDt.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY',
      'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
 
 TdeWsGroupedPotential = TdeWs.groupby(['Potential'])
 TdeWsGroupedPotentialTemperature = TdeWs.groupby(['Temperature', 'Potential'])
 TdeWsGroupedPotentialDirection = TdeWs.groupby(['Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY', 'UnitZ',
      'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
-TdeWsGroupedPotentialDirectionTemperature = TdeWs.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY',
+TdeWsGroupedTemperaturePotentialDirection = TdeWs.groupby(['Temperature', 'Potential', 'Direction', 'DirectionMb', 'Reparameterization', 'X', 'Y', 'Z', 'R', 'UnitX', 'UnitY',
      'UnitZ', 'Theta', 'Phi', 'a1', 'a2', 'a3', 'h'])
 
 # </editor-fold>
@@ -833,12 +836,27 @@ TdeWsGroupedPotentialDirectionTemperature = TdeWs.groupby(['Temperature', 'Poten
 print("^^^ Dictionary")
 TdeDefectGroupedPotentialDic = {
     'Ws': TdeWsGroupedPotential,
-    'Dist': TdeDtGroupedPotential
+    'Dt': TdeDtGroupedPotential
+}
+
+TdeGroupedPotentialDirectionTemperatureDic = {
+    'Ws': TdeWsGroupedTemperaturePotentialDirection,
+    'Dt': TdeDtGroupedTemperaturePotentialDirection
+}
+
+TdeGroupedPotentialTemperatureDic = {
+    'Ws': TdeWsGroupedPotentialTemperature,
+    'Dt': TdeDtGroupedPotentialTemperature
 }
 
 TdeDefectGroupedPotentialDirectionDescribeDic = {
     'Ws': TdeWsGroupedPotentialDirectionDescribe,
-    'Dist': TdeDtGroupedPotentialDirectionDescribe
+    'Dt': TdeDtGroupedPotentialDirectionDescribe
+}
+
+TdeGroupedTemperaturePotentialDirectionDescribeDic = {
+    'Ws': TdeWsGroupedTemperaturePotentialDirectionDescribe,
+    'Dt': TdeDtGroupedTemperaturePotentialDirectionDescribe
 }
 
 # </editor-fold>
@@ -851,7 +869,7 @@ print("***** Report")
 # <editor-fold desc="^^^ Dataframe">
 print("^^^ Dataframe")
 ReadBatch = False
-Method = "Else"
+Method = "HighestLast"
 if Method == "ExtractBatch":
 
     # <editor-fold desc="Deleting">
@@ -1264,17 +1282,41 @@ elif Method == "HighestLast":
     # </editor-fold>
 
     # <editor-fold desc="Polar">
-    Report[['X', 'Y', 'Z']] = Report['Direction'].apply(DirectionFunc).apply(pd.Series)
+    Report[['X', 'Y', 'Z']] = (
+        Report['Direction']
+        .apply(DirectionFunc)
+        .apply(pd.Series)
+        .rename(columns={0: 'X', 1: 'Y', 2: 'Z'})
+    )
 
-    Report['R'] = np.sqrt(Report['X'] ** 2 + Report['Y'] ** 2 + Report['Z'] ** 2)
+    # Magnitude
+    Report['R'] = np.sqrt(
+        Report['X'] ** 2 +
+        Report['Y'] ** 2 +
+        Report['Z'] ** 2
+    )
+
+    # Unit vector components
     Report['UnitX'] = Report['X'] / Report['R']
     Report['UnitY'] = Report['Y'] / Report['R']
     Report['UnitZ'] = Report['Z'] / Report['R']
 
-    Report['Theta'] = np.degrees(np.arctan2(Report['UnitY'], Report['UnitX'])) % 360
-    Report['Phi'] = np.degrees(np.arccos(Report['UnitZ']))
+    # Spherical coordinates
+    Report['Theta'] = (
+            np.degrees(np.arctan2(Report['UnitY'], Report['UnitX'])) % 360
+    )
+    Report['Phi'] = (
+        np.degrees(np.arccos(Report['UnitZ']))
+    )
 
-    Report[['a1', 'a2', 'a3', 'h']] = Report['DirectionMb'].apply(DirectionFunc).apply(pd.Series)
+    # Convert martensitic Bain direction → crystallographic components
+    Report[['a1', 'a2', 'a3', 'h']] = (
+        Report['DirectionMb']
+        .apply(DirectionFunc)
+        .apply(pd.Series)
+        .rename(columns={0: 'a1', 1: 'a2', 2: 'a3', 3: 'h'})
+    )
+
     # </editor-fold>
 
     # <editor-fold desc="Export">
@@ -1497,7 +1539,7 @@ print("***** Minimization")
 
 # <editor-fold desc="^^^ Dataframe">
 print("^^^ Dataframe")
-Method = "Else"
+Method = "else"
 if Method == "HighestLast":
     # <editor-fold desc="Extraction">
     Minimization = pd.read_csv("D:/Queens_University/MME/Project/Zr/Tde/Run/20250810-Collection-Report-Minimization-Parallel-Highest-Last.csv")
@@ -1516,17 +1558,42 @@ if Method == "HighestLast":
     # </editor-fold>
 
     # <editor-fold desc="Polar">
-    Minimization[['X', 'Y', 'Z']] = Minimization['Direction'].apply(DirectionFunc).apply(pd.Series)
+    # ----- Polar coordinate processing (Minimization) -----
 
-    Minimization['R'] = np.sqrt(Report['X'] ** 2 + Minimization['Y'] ** 2 + Minimization['Z'] ** 2)
+    # Convert direction → vector
+    Minimization[['X', 'Y', 'Z']] = (
+        Minimization['Direction']
+        .apply(DirectionFunc)
+        .apply(pd.Series)
+        .rename(columns={0: 'X', 1: 'Y', 2: 'Z'})
+    )
+
+    # Magnitude
+    Minimization['R'] = np.sqrt(
+        Minimization['X'] ** 2 +
+        Minimization['Y'] ** 2 +
+        Minimization['Z'] ** 2
+    )
+
+    # Unit vector
     Minimization['UnitX'] = Minimization['X'] / Minimization['R']
     Minimization['UnitY'] = Minimization['Y'] / Minimization['R']
     Minimization['UnitZ'] = Minimization['Z'] / Minimization['R']
 
-    Minimization['Theta'] = np.degrees(np.arctan2(Minimization['UnitY'], Minimization['UnitX'])) % 360
+    # Spherical coordinates
+    Minimization['Theta'] = (
+            np.degrees(np.arctan2(Minimization['UnitY'], Minimization['UnitX'])) % 360
+    )
     Minimization['Phi'] = np.degrees(np.arccos(Minimization['UnitZ']))
 
-    Minimization[['a1', 'a2', 'a3', 'h']] = Minimization['DirectionMb'].apply(DirectionFunc).apply(pd.Series)
+    # Convert Bain direction → components
+    Minimization[['a1', 'a2', 'a3', 'h']] = (
+        Minimization['DirectionMb']
+        .apply(DirectionFunc)
+        .apply(pd.Series)
+        .rename(columns={0: 'a1', 1: 'a2', 2: 'a3', 3: 'h'})
+    )
+
     # </editor-fold>
 
     # <editor-fold desc="Export">
@@ -1633,36 +1700,36 @@ print("***** Stat")
 # <editor-fold desc="Dt">
 # print(TdeDtGroupedPotentialDirection)
 # os.system("pause")
-TdeDtGroupedPotentialDirectionTemperatureMin = TdeDtGroupedPotentialDirectionTemperature["Energy"].min().reset_index()
+TdeDtGroupedPotentialDirectionTemperatureMin = TdeDtGroupedTemperaturePotentialDirection["Energy"].min().reset_index()
 TdeDtGroupedPotentialDirectionTemperatureMin.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureMin.csv", index=False)
 
-TdeDtGroupedPotentialDirectionTemperatureMean = TdeDtGroupedPotentialDirectionTemperature["Energy"].mean().reset_index()
+TdeDtGroupedPotentialDirectionTemperatureMean = TdeDtGroupedTemperaturePotentialDirection["Energy"].mean().reset_index()
 TdeDtGroupedPotentialDirectionTemperatureMean.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureMean.csv", index=False)
 
-TdeDtGroupedPotentialDirectionTemperatureMedian = (TdeDtGroupedPotentialDirectionTemperature["Energy"].median().reset_index())
+TdeDtGroupedPotentialDirectionTemperatureMedian = (TdeDtGroupedTemperaturePotentialDirection["Energy"].median().reset_index())
 TdeDtGroupedPotentialDirectionTemperatureMedian.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureMedian.csv", index=False)
 
-TdeDtGroupedPotentialDirectionTemperatureMode = (TdeDtGroupedPotentialDirectionTemperature["Energy"].apply(lambda x: x.mode().iloc[0]).reset_index())
+TdeDtGroupedPotentialDirectionTemperatureMode = (TdeDtGroupedTemperaturePotentialDirection["Energy"].apply(lambda x: x.mode().iloc[0]).reset_index())
 TdeDtGroupedPotentialDirectionTemperatureMode.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureMode.csv", index=False)
 
-TdeDtGroupedPotentialDirectionTemperatureVariance = (TdeDtGroupedPotentialDirectionTemperature["Energy"].var().reset_index())
+TdeDtGroupedPotentialDirectionTemperatureVariance = (TdeDtGroupedTemperaturePotentialDirection["Energy"].var().reset_index())
 TdeDtGroupedPotentialDirectionTemperatureVariance.to_csv(PythonName + "-" + "TdeDtGroupedPotentialDirectionTemperatureVar.csv", index=False)
 # </editor-fold>
 
 # <editor-fold desc="Ws">
-TdeWsGroupedPotentialDirectionTemperatureMin = TdeWsGroupedPotentialDirectionTemperature["Energy"].min().reset_index()
+TdeWsGroupedPotentialDirectionTemperatureMin = TdeWsGroupedTemperaturePotentialDirection["Energy"].min().reset_index()
 TdeWsGroupedPotentialDirectionTemperatureMin.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureMin.csv", index=False)
 
-TdeWsGroupedPotentialDirectionTemperatureMean = TdeWsGroupedPotentialDirectionTemperature["Energy"].mean().reset_index()
+TdeWsGroupedPotentialDirectionTemperatureMean = TdeWsGroupedTemperaturePotentialDirection["Energy"].mean().reset_index()
 TdeWsGroupedPotentialDirectionTemperatureMean.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureMean.csv", index=False)
 
-TdeWsGroupedPotentialDirectionTemperatureMedian = (TdeWsGroupedPotentialDirectionTemperature["Energy"].median().reset_index())
+TdeWsGroupedPotentialDirectionTemperatureMedian = (TdeWsGroupedTemperaturePotentialDirection["Energy"].median().reset_index())
 TdeWsGroupedPotentialDirectionTemperatureMedian.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureMedian.csv", index=False)
 
-TdeWsGroupedPotentialDirectionTemperatureMode = (TdeWsGroupedPotentialDirectionTemperature["Energy"].apply(lambda x: x.mode().iloc[0]).reset_index())
+TdeWsGroupedPotentialDirectionTemperatureMode = (TdeWsGroupedTemperaturePotentialDirection["Energy"].apply(lambda x: x.mode().iloc[0]).reset_index())
 TdeWsGroupedPotentialDirectionTemperatureMode.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureMode.csv", index=False)
 
-TdeWsGroupedPotentialDirectionTemperatureVariance = (TdeWsGroupedPotentialDirectionTemperature["Energy"].var().reset_index())
+TdeWsGroupedPotentialDirectionTemperatureVariance = (TdeWsGroupedTemperaturePotentialDirection["Energy"].var().reset_index())
 TdeWsGroupedPotentialDirectionTemperatureVariance.to_csv(PythonName + "-" + "TdeWsGroupedPotentialDirectionTemperatureVar.csv", index=False)
 # </editor-fold>
 
@@ -2226,7 +2293,7 @@ if Active:
 print("######################################## Energy per atom") # %%
 
 # <editor-fold desc="***** Merging-Temperature,Potential">
-Active=True
+Active=False
 if Active:
     print("***** Merging-Temperature,Potential")
     ThermalEquilibrium = Thermal[
@@ -2623,7 +2690,7 @@ if Active:
 
     # <editor-fold desc="Plotting-Probability-PotentialListReparamterized">
     print("Plotting-Probability-PotentialListReparamterized")
-    Plotting = True
+    Plotting = False
     if Plotting:
         Iteration = 0
         PotentialList = ["M2R", "M3R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2"]
@@ -2649,7 +2716,7 @@ if Active:
                 print(Group.columns.tolist())
                 # print(Group)
                 GroupDropped = Group.drop(columns=['Potential', 'Try', 'DirectionMb', 'Direction',
-                                                   'File', 'LookupWord', 'EnergyPerAtom',
+                                                   # 'File', 'LookupWord', 'EnergyPerAtom',
                                                    'Reparameterization',
                                                    'X', 'Y', 'Z', 'R',
                                                    'UnitX', 'UnitY', 'UnitZ',
@@ -2667,7 +2734,7 @@ if Active:
                 LineStyle = '--' if Name[-1] != 'R' else '-'
 
                 sns.kdeplot(data=GroupValuesFlattenNp,
-                            cumulative=True, lw=2,
+                            cumulative=True, lw=1,
                             color=ColorsDic[Potential],
                             label=Name,
                             linestyle=LineStyle,
@@ -2732,13 +2799,13 @@ if Active:
         )
         plt.grid(False)
         plt.tight_layout()
-        plt.savefig(PythonName + "-" + "All" + "-Prob.png", bbox_inches='tight')
+        plt.savefig(PythonName + "-" + "All" + "-Prob-Kde.png", bbox_inches='tight')
         plt.show()
         plt.close()
     # </editor-fold>
 
     # <editor-fold desc="Plotting-Probability-ecdfplot">
-    Plotting = True
+    Plotting = False
     if Plotting:
         sns.ecdfplot(data=TdeWs,
                      x="Energy",
@@ -2753,6 +2820,25 @@ if Active:
         plt.step([0, 21, 30, 50, 110, 120], [0, 0.16, 0.55, 0.61, 1, 1], 'black', linewidth=3.5, where='post',
                  label="Biget")
 
+        bar_gap = 1
+        # Temperature ranges and corresponding values
+
+        # plt.xticks(x_positions, temperature_ranges)
+        temperature_ranges = ["$T_{d}$<21 eV", "21<=$T_{d}$<30 eV", "30<=$T_{d}$<50 eV", "50<=$T_{d}$<110 eV"]
+
+        FontSize = 18
+        SpaceH = 2
+
+        plt.text(20 + SpaceH, 0, '%0', verticalalignment='bottom', horizontalalignment='left',
+                 fontsize=FontSize, fontstyle='italic', color='black')
+        plt.text(30 + SpaceH, 0.16, '%16', verticalalignment='bottom', horizontalalignment='left',
+                 fontsize=FontSize, fontstyle='italic')
+        plt.text(50 + SpaceH, 0.53, '%55', verticalalignment='bottom', horizontalalignment='left',
+                 fontsize=FontSize, fontstyle='italic')
+        plt.text(110 + SpaceH, 0.61, '%61', verticalalignment='bottom',
+                 horizontalalignment='left', fontsize=FontSize, fontstyle='italic')
+
+
         # bar_gap = 1
         # Temperature ranges and corresponding values
 
@@ -2765,6 +2851,22 @@ if Active:
         # ["$T_{d}$<21 eV", "21<=$T_{d}$<30 eV", "30<=$T_{d}$<50 eV", "50<=$T_{d}$<110 eV"])
         # Create a bar plot
         # plt.bar(x_positions, values, color='blue', width=0.5, edgecolor='black')
+        handles, labels = plt.gca().get_legend_handles_labels()
+        # order = [1, 2, 0, 3, 4, 5] # when no original version is added
+        order = [0, 1, 2, 3, 4, 5, 6, 7]  # when original versions are added
+
+        # Filter order to only valid indices
+        valid_order = [idx for idx in order if idx < len(handles)]
+
+        plt.legend(
+            [handles[idx] for idx in valid_order],
+            [labels[idx] for idx in valid_order],
+            frameon=False,
+            fontsize=15,
+            loc='center',
+            bbox_to_anchor=(0.75, 0.27),
+            labelspacing=0.2
+        )
 
         plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'{x:.0%}'))
         # Add labels and title
@@ -2776,13 +2878,13 @@ if Active:
         plt.legend()
         plt.grid(False)
 
-        plt.savefig(PythonName + "-" + "All" + "-Prob.jpg", bbox_inches='tight')
+        plt.savefig(PythonName + "-" + "All" + "-Prob-ecdf.png", bbox_inches='tight')
         plt.show()
         plt.close()
     # </editor-fold>
 
     # <editor-fold desc="Plotting-Probability-ecdf">
-    Plotting = True
+    Plotting = False
     if Plotting:
         sns.ecdfplot(data=TdeWs,
                      x="Energy",
@@ -2825,59 +2927,127 @@ if Active:
         plt.close()
     # </editor-fold>
 
-    # <editor-fold desc="Table">
-    Active = False
+    # <editor-fold desc="Plotting-Probability-ecdfplot (Manual Colors)">
+    Plotting = False
+    if Plotting:
+        # PotentialList = ["M2R", "M3R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2"]
+        PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
+        Colors = ["blue", "red", "green", "purple", "darkgoldenrod", "magenta"]
+        ColorsDic = {
+            "M2": Colors[0],
+            "M2R": Colors[0],
+            "M3": Colors[1],
+            "M3R": Colors[1],
+            "BMD192": Colors[2],
+            "BMD192R": Colors[2],
+            "TabGap1": Colors[3],
+            "TabGap2": Colors[4],
+            "MtpPd": Colors[5],
+        }
+
+        LineStyleDic = {
+            "M2": "dashed",  # or alternatively '--'
+            "M2R": "solid",  # or '-'
+            "M3": "dashed",
+            "M3R": "solid",
+            "BMD192": "dashed",
+            "BMD192R": "solid",
+            "TabGap1": "solid",
+            "TabGap2": "solid",
+            "MtpPd": "solid",
+        }
+
+        plt.figure(figsize=(6, 6))
+        print(TdeWs["Potential"].unique())
+        print(list(TdeWs))
+
+        for pot in PotentialList:
+            subset = TdeWs[TdeWs["Potential"] == pot]
+            if not subset.empty:
+                sns.ecdfplot(
+                    data=subset,
+                    x="Energy",
+                    lw=3.5,
+                    color=ColorsDic.get(pot, "gray"),
+                    linestyle=LineStyleDic.get(pot, "solid"),
+                    label=pot
+                )
+
+        # Add Biget reference curve
+        plt.step([0, 21, 30, 50, 110, 120],
+                 [0, 0.16, 0.55, 0.61, 1, 1],
+                 'black', linewidth=3.5, where='post',
+                 label="Biget")
+
+        # Text annotations
+        FontSize = 18
+        SpaceH = 2
+        plt.text(20 + SpaceH, 0, '%0', va='bottom', ha='left',
+                 fontsize=FontSize, fontstyle='italic', color='black')
+        plt.text(30 + SpaceH, 0.16, '%16', va='bottom', ha='left',
+                 fontsize=FontSize, fontstyle='italic')
+        plt.text(50 + SpaceH, 0.53, '%55', va='bottom', ha='left',
+                 fontsize=FontSize, fontstyle='italic')
+        plt.text(110 + SpaceH, 0.61, '%61', va='bottom', ha='left',
+                 fontsize=FontSize, fontstyle='italic')
+
+        # Legend
+        plt.legend(
+            frameon=False,
+            fontsize=20,
+            loc='center',
+            bbox_to_anchor=(0.75, 0.27),
+            labelspacing=0.2
+        )
+
+        # Labels and formatting
+        plt.xlabel(r"$T_{d}$ (eV)", fontsize=24)
+        plt.ylabel("Cumulative distribution probability", fontsize=24)
+        plt.xlim(0, 150)
+        plt.ylim(0, 1)
+        plt.grid(False)
+
+        plt.savefig(PythonName + "-All-Prob-ecdf.png", dpi=600, bbox_inches='tight', transparent=True)
+        plt.show()
+        plt.close()
+    # </editor-fold>
+
+    # # <editor-fold desc="Plotting">
+    # Active = False
+    # if Active:
+    #     sns.set_theme(style="whitegrid", rc={"figure.figsize": (25, 5), "font.sans-serif": "DejaVu Sans"})
+    #     axes = sns.boxplot(data=TdeWs, x='DirectionMb', y="Energy", hue="Potential", gap=.1)
+    #     sns.move_legend(axes, "lower center", bbox_to_anchor=(.5, 1), ncol=len(TdeWs["Potential"].unique()))
+    #
+    #     fig = axes.get_figure()
+    #     fig.savefig(PythonName + "-complete_maxval_plot.png", bbox_inches='tight')
+    #     plt.show()
+    #     plt.close(fig)
+    # # </editor-fold>
+
+    # <editor-fold desc="Statistics table generation">
+    Active = True
     if Active:
-        data = pd.DataFrame(columns=["Potential", 'DirectionMb', "Value"])
-        for column in Tde.columns[:-1]:
-            # essentially just the new_column_name function from your code
-            indices = column.split("_")[1:]
-            indSubStrs = [r"$\bar{" + index[1:] + "}$" if "-" in index else index for index in indices]
-            indStr = "".join(indSubStrs)
+        from scipy import stats
+        statDf = pd.DataFrame(columns=[
+            "Potential",
+            "T_d,avg", "T_d,avg Error",
+            "Tavg_d,avg", "Tavg_d,avg Error",
+            "Tmed_d,avg", "Tmed_d,avg Error"
+        ])
 
-            pots = Tde["Potential"]
-            vals = Tde[column]
-            lenVals = len(vals)
+        for pot in TdeWs["Potential"].unique():
+            potData = TdeWs[TdeWs["Potential"] == pot]
+            cumMean = np.nanmean(potData["Energy"])
+            cumStErr = stats.sem(potData["Energy"], nan_policy="omit")
 
-            dataNew = pd.DataFrame({
-                "Potential": pots,
-                'DirectionMb': pd.Series([indStr] * lenVals),
-                "Value": vals
-            })
-            data = pd.concat([data, dataNew], ignore_index=True, axis=0)
-        print(data)
-        # mostly for debugging you can get rid of this
-        # data.to_csv("20240516-transform.csv")
+            pdMeans = []
+            pdMeds = []
 
-        # %% plot
-        sns.set_theme(style="whitegrid", rc={"figure.figsize": (25, 5), "font.sans-serif": "DejaVu Sans"})
-        axes = sns.boxplot(data=data, x='DirectionMb', y="Value", hue="Potential", gap=.1)
-        sns.move_legend(axes, "lower center", bbox_to_anchor=(.5, 1), ncol=len(Tde.columns[:-1]))
-
-        fig = axes.get_figure()
-        fig.savefig("complete_maxval_plot.png")
-
-        # %% stats
-        statDf = pd.DataFrame(columns=["Potential",
-                                       "T_d,avg", "T_d,avg Error",
-                                       "Tavg_d,avg", "Tavg_d,avg Error",
-                                       "Tmed_d,avg", "Tmed_d,avg Error"])
-
-        for pot in data["Potential"].unique():
-            potData = data[data["Potential"] == pot]
-            cumMean = np.nanmean(potData["Value"])
-            cumStErr = stats.sem(potData["Value"], nan_policy="omit")
-
-            pdMeans = np.array([])
-            pdMeds = np.array([])
-
-            for dir in potData['DirectionMb'].unique():
-                pdData = potData[potData['DirectionMb'] == dir]
-                pdMean = np.nanmean(pdData["Value"])
-                pdMed = np.nanmedian(pdData["Value"])
-
-                pdMeans = np.append(pdMeans, pdMean)
-                pdMeds = np.append(pdMeds, pdMed)
+            for dir in potData["DirectionMb"].unique():
+                pdData = potData[potData["DirectionMb"] == dir]
+                pdMeans.append(np.nanmean(pdData["Energy"]))
+                pdMeds.append(np.nanmedian(pdData["Energy"]))
 
             meanOfMeans = np.nanmean(pdMeans)
             mMeanStErr = stats.sem(pdMeans, nan_policy="omit")
@@ -2895,86 +3065,82 @@ if Active:
                 "Tmed_d,avg Error": [mMedStErr]
             })
 
-            statDf = pd.concat([statDf, dfTemp], ignore_index=True, axis=0)
+            statDf = pd.concat([statDf, dfTemp], ignore_index=True)
 
-        statDf.to_csv("20240516-stats.csv")
+        statDf.to_csv(PythonName + "-stats.csv", index=False)
 
-    # </editor-fold>
+
+        # Create LaTeX-safe names
+        def LatexFriendly(text: str) -> str:
+            replacements = {
+                "_": r"\_",
+                "%": r"\%",
+                "$": r"\$",
+                "&": r"\&"
+            }
+            for old, new in replacements.items():
+                text = text.replace(old, new)
+            return text
+
+
+        latexDf = statDf.copy()
+        latexDf.columns = [LatexFriendly(c) for c in latexDf.columns]
+        latexDf["Potential"] = latexDf["Potential"].apply(LatexFriendly)
+
+        # Format numeric values
+        for col in latexDf.columns[1:]:
+            latexDf[col] = latexDf[col].apply(lambda x: f"{x:.3f}" if pd.notnull(x) else "")
+
+        # Build LaTeX code manually for Overleaf
+        header = r"""
+        \begin{table}[htbp]
+        \centering
+        \caption{Statistical summary of potentials}
+        \label{tab:stats}
+        \begin{tabular}{lrrrrrr}
+        \toprule
+        Potential & T\_d,avg & T\_d,avg Error & Tavg\_d,avg & Tavg\_d,avg Error & Tmed\_d,avg & Tmed\_d,avg Error \\
+        \midrule
+        """.strip()
+
+        body = "\n".join([
+            f"{row['Potential']} & {row['T_d,avg']:.3f} & {row['T_d,avg Error']:.3f} & "
+            f"{row['Tavg_d,avg']:.3f} & {row['Tavg_d,avg Error']:.3f} & "
+            f"{row['Tmed_d,avg']:.3f} & {row['Tmed_d,avg Error']:.3f} \\\\"
+            for _, row in statDf.iterrows()
+        ])
+
+        footer = r"""
+        \bottomrule
+        \end{tabular}
+        \end{table}
+        """.strip()
+
+        latex_full = f"{header}\n{body}\n{footer}"
+
+        # Save to .txt (ready to paste in Overleaf)
+        with open(PythonName + "-stats-latex-friendly.txt", "w", encoding="utf-8") as f:
+            f.write(latex_full)
+
+        # print(latex_full)
+    # </editor-fold
 # </editor-fold>
 
 # <editor-fold desc="######################################## Stereograph">
 print("######################################## Stereograph") # %%
 
-# <editor-fold desc="***** Plot-stereograph-contour-TdeGroupedPotential">
-print("***** Plot-stereograph-contour-TdeGroupedPotential")
-Active = False
-if Active:
-    PotentialList = ["M2R", "M3R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2"]
-
-    for Key, Content in TdeDefectGroupedPotentialDic.items():
-        print(Key)
-        for Name, Group in Content:
-            Potential = Name[0]
-            if Potential in PotentialList:
-                print(Potential)
-                # print(Group)
-                # print(Group["Direction"])
-                Title = "TdeDefectGroupedPotentialDic" + "-" + Key + "-" + Potential
-                fig, ax = mplstereonet.subplots(figsize=(10, 8))
-
-                Phi = Group["Phi"] + 90
-                Theta = Group["Theta"]
-                X = Group["X"]
-                Y = Group["Y"]
-                Z = Group["Z"]
-
-                GroupGroupedCount = Group.groupby('Direction')["Energy"].describe().reset_index()["min"]
-                # print(GroupGroupedCount)
-                IntensityMin = GroupGroupedCount.min()
-                IntensityMax = GroupGroupedCount.max()
-                # print(IntensityMax, IntensityMin)
-
-                cax = ax.density_contourf(
-                    Phi, Theta,
-                    measurement='poles',
-                    cmap='jet',
-                    # vmin=IntensityMin, vmax=IntensityMax  # set color range here
-                    levels=Levels  # <--- ADD THIS LINE
-                )
-
-                # ---- Scatter plot the points ----
-                Xs, Ys = [], []
-                for phi, theta in zip(Phi, Theta):
-                    x_point, y_point = mplstereonet.stereonet_math.pole(phi, theta)
-                    Xs.append(x_point)
-                    Ys.append(y_point)
-                ax.scatter(Xs, Ys, color='black', s=20, alpha=0.7, label='_nolegend_')
-
-                # ---- Optional: annotate points ----
-                for x_point, y_point, x, y, z in zip(Xs, Ys, X, Y, Z):
-                    ax.text(x_point, y_point+0.1, f"[{x:.0f},{y:.0f},{z:.0f}]",
-                            fontsize=20, ha='center', va='center')
-
-                ax.set_azimuth_ticks([])
-                ax.grid(False)
-
-                cbar = fig.colorbar(cax)
-                # cbar.set_label("Pole Density")
-
-                plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
-                plt.show()
-                plt.close()
-# </editor-fold>
-# os.system("pause")
 # <editor-fold desc="***** Plot-stereograph-points-TdeGroupedPotentialDirectionDescribe">
 print("***** Plot-stereograph-points-TdeGroupedPotentialDirectionDescribe")
 Active = False
 if Active:
-    for Key, Content in TdeDefectGroupedPotentialDirectionDescribeDic.items():
+    for Key, Content in TdeGroupedTemperaturePotentialDirectionDescribeDic.items():
         print(Key)
-        for Potential, group in Content.groupby('Potential'):
-            print(Potential, group[["Direction","min"]])
-            Title = "Stereograph" + "-" + Key + "-" + Potential + "-" + str(Based)
+        # print(Content)
+        for Name, group in Content.groupby(['Temperature','Potential']):
+            print(Name, group[["Direction","min"]])
+            Temperature = Name[0]
+            Potential = Name[1]
+            Title = "StereographTdeDefectGroupedPotentialDirectionDescribeDic" + "-" + Key + "-" + str(Temperature) + "-" + Potential
             r = np.sqrt(1 / (1 + group['UnitZ']))
             x_proj = r * group['UnitX']
             y_proj = r * group['UnitY']
@@ -2997,205 +3163,905 @@ if Active:
             plt.show()
 # </editor-fold>
 
+# <editor-fold desc="***** Plot-stereograph-points-TdeGroupedPotentialDirectionDescribe-Interpolation: RBF and Griddata">
+print("***** Plot-stereograph-points-TdeGroupedPotentialDirectionDescribe-Interpolation")
+Active = False
+if Active:
+    import matplotlib.colors as mcolors
+    import io
+    # from scipy.interpolate import Rbf # No longer needed
+    from scipy.interpolate import griddata
+
+    # 3. Set up global colormap and resolution
+    cmap = plt.get_cmap('viridis')
+    num_levels = 100  # Number of contour levels for a smooth map
+    grid_res = 200  # 200x200 grid for interpolation
+
+    generated_files = []
+
+    # 4. Loop over each group
+    for (temperature, potential), group_df in TdeWsGroupedTemperaturePotentialDirectionDescribe.groupby(
+            ['Temperature', 'Potential']):
+
+        # --- Check for sufficient data ---
+        if group_df.shape[0] < 3:
+            print(f"Skipping group ({temperature}, {potential}): not enough data points (need >= 3).")
+            continue
+
+        # --- NEW: Set up local color normalization for this group ---
+        vmin_local = group_df['mean'].min()
+        vmax_local = group_df['mean'].max()
+        # Handle case where all values are the same
+        if vmin_local == vmax_local:
+            vmin_local -= 1  # Create a small range
+            vmax_local += 1
+
+        norm_local = mcolors.Normalize(vmin=vmin_local, vmax=vmax_local)
+        levels_local = np.linspace(vmin_local, vmax_local, num_levels)
+
+        # 5. Calculate stereographic projection coordinates for original data
+        theta_rad = np.deg2rad(group_df['Theta'])
+        phi_rad = np.deg2rad(group_df['Phi'])
+
+        x_proj_orig = np.tan(theta_rad / 2) * np.cos(phi_rad)
+        y_proj_orig = np.tan(theta_rad / 2) * np.sin(phi_rad)
+
+        colors_orig = group_df['mean']
+
+        # --- SOLUTION: Add boundary points to prevent bad extrapolation ---
+        # This is critical for griddata's linear interpolation
+        boundary_value = colors_orig.mean()
+        num_boundary_points = 36
+        boundary_phi_rad = np.linspace(0, 2 * np.pi, num_boundary_points)
+
+        x_proj_boundary = 1.0 * np.cos(boundary_phi_rad)
+        y_proj_boundary = 1.0 * np.sin(boundary_phi_rad)
+        colors_boundary = np.full(num_boundary_points, boundary_value)
+
+        # Combine the original data points with the new boundary points
+        x_proj = np.concatenate([x_proj_orig, x_proj_boundary])
+        y_proj = np.concatenate([y_proj_orig, y_proj_boundary])
+        colors = np.concatenate([colors_orig, colors_boundary])
+        # --- End of boundary solution ---
+
+        # --- New Interpolation Steps ---
+
+        # 6. Create a grid to interpolate over
+        xi = np.linspace(-1.1, 1.1, grid_res)
+        yi = np.linspace(-1.1, 1.1, grid_res)
+        grid_x, grid_y = np.meshgrid(xi, yi)
+
+        # 7. Interpolate using griddata
+        # We use the augmented data (original + boundary) and 'linear' method
+        try:
+            grid_z = griddata((x_proj, y_proj), colors, (grid_x, grid_y), method='linear')
+        except Exception as e:
+            print(f"Skipping group ({temperature}, {potential}) due to griddata error: {e}")
+            continue
+
+        # 8. Mask the interpolated grid
+        # We only want to show data inside the unit circle (radius=1)
+        mask = np.sqrt(grid_x ** 2 + grid_y ** 2) > 1
+        grid_z[mask] = np.nan
+
+        # --- Plotting Steps ---
+
+        # 9. Create the figure
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+        # 10. Plot the interpolated heatmap
+        # Use the local levels and norm
+        contour = ax.contourf(grid_x, grid_y, grid_z, levels=levels_local,
+                              cmap=cmap, norm=norm_local, extend='both')
+
+        # 11. Plot the original data points on top
+        # Use the local norm for consistent coloring
+        ax.scatter(x_proj_orig, y_proj_orig, s=60, c=colors_orig, cmap=cmap, norm=norm_local,
+                   edgecolors='black', zorder=12, linewidth=1,
+                   label='Original Data Points')
+
+        # 12. Add boundary circle and styling
+        boundary_circle = plt.Circle((0, 0), 1, color='black', fill=False,
+                                     linewidth=2, zorder=11)
+        ax.add_artist(boundary_circle)
+
+        ax.set_aspect('equal')
+        ax.set_xlim([-1.1, 1.1])
+        ax.set_ylim([-1.1, 1.1])
+        ax.axis('off')
+
+        # 13. Add title and color bar
+        ax.set_title(
+            f'Interpolated Stereographic Projection (griddata)\nTemperature: {temperature}, Potential: {potential}',
+            fontsize=16, pad=20)
+
+        # The colorbar will automatically use the local norm from the 'contour' object
+        cbar = fig.colorbar(contour, ax=ax, shrink=0.8, aspect=20,
+                            label='Interpolated Mean Value')
+
+        # 14. Save the figure
+        filename = f'interpolated_stereograph_T{temperature}_{potential}.png'
+        plt.savefig(filename, bbox_inches='tight', dpi=150)
+        plt.show() # Kept as in your provided script
+        plt.close(fig)  # Close the figure
+        generated_files.append(filename)
+
+    print(f"Successfully generated {len(generated_files)} plots:")
+    print(generated_files)
+
+# </editor-fold>
+
+# <editor-fold desc="***** Plot-stereograph-points-TdeGroupedPotentialDirectionDescribe-Interpolation: Kriging (Smooth)">
+print("***** Plot-stereograph-points-TdeGroupedPotentialDirectionDescribe-Interpolation (Kriging, Smooth)")
+Active = False  # Set to True to run the code
+if Active:
+    import matplotlib.colors as mcolors
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    try:
+        from pykrige.ok import OrdinaryKriging  # Import Kriging
+    except ImportError:
+        print("PyKrige not installed. Please install it first: pip install pykrige")
+        Active = False
+
+    # 3. Set up global colormap and resolution
+    # (Assuming TdeWsGroupedTemperaturePotentialDirectionDescribe is already defined)
+    cmap = plt.get_cmap('viridis')
+    num_levels = 100  # Number of contour levels for a smooth map
+    grid_res = 200  # 200x200 grid for interpolation
+
+    generated_files = []
+
+    # 4. Loop over each group
+    for (temperature, potential), group_df in TdeWsGroupedTemperaturePotentialDirectionDescribe.groupby(
+            ['Temperature', 'Potential']):
+
+        # --- Check for sufficient data ---
+        if group_df.shape[0] < 3:
+            print(f"Skipping group ({temperature}, {potential}): not enough data points (need >= 3).")
+            continue
+
+        # --- NEW: Set up local color normalization for this group ---
+        vmin_local = group_df['mean'].min()
+        vmax_local = group_df['mean'].max()
+        # Handle case where all values are the same
+        if vmin_local == vmax_local:
+            vmin_local -= 1  # Create a small range
+            vmax_local += 1
+
+        norm_local = mcolors.Normalize(vmin=vmin_local, vmax=vmax_local)
+        levels_local = np.linspace(vmin_local, vmax_local, num_levels)
+
+        # 5. Calculate stereographic projection coordinates for original data
+        theta_rad = np.deg2rad(group_df['Theta'])
+        phi_rad = np.deg2rad(group_df['Phi'])
+
+        x_proj_orig = np.tan(theta_rad / 2) * np.cos(phi_rad)
+        y_proj_orig = np.tan(theta_rad / 2) * np.sin(phi_rad)
+
+        colors_orig = group_df['mean']
+
+        # --- SOLUTION: Add boundary points to prevent bad extrapolation ---
+        # This is still very helpful for Kriging
+        boundary_value = colors_orig.mean()
+        num_boundary_points = 36
+        boundary_phi_rad = np.linspace(0, 2 * np.pi, num_boundary_points)
+
+        x_proj_boundary = 1.0 * np.cos(boundary_phi_rad)
+        y_proj_boundary = 1.0 * np.sin(boundary_phi_rad)
+        colors_boundary = np.full(num_boundary_points, boundary_value)
+
+        # Combine the original data points with the new boundary points
+        x_proj = np.concatenate([x_proj_orig, x_proj_boundary])
+        y_proj = np.concatenate([y_proj_orig, y_proj_boundary])
+        colors = np.concatenate([colors_orig, colors_boundary])
+        # --- End of boundary solution ---
+
+        # --- New Interpolation Steps ---
+
+        # 6. Create a grid to interpolate over
+        xi = np.linspace(-1.1, 1.1, grid_res)
+        yi = np.linspace(-1.1, 1.1, grid_res)
+        grid_x, grid_y = np.meshgrid(xi, yi)
+
+        # 7. Interpolate using Kriging
+        try:
+            # Instantiate the Kriging object
+            # ---!!! KEY CHANGE HERE !!! ---
+            # Using 'gaussian' model for a smooth interpolation
+            ok = OrdinaryKriging(
+                x_proj,
+                y_proj,
+                colors,
+                variogram_model='gaussian',  # <-- CHANGED FROM 'linear'
+                verbose=False,
+                enable_plotting=False,
+                nlags=6  # Added nlags for more robustness on small datasets
+            )
+
+            # Execute the Kriging on the grid
+            # 'grid' mode uses the 1D xi, yi vectors
+            grid_z, sse = ok.execute('grid', xi, yi)
+
+        except Exception as e:
+            # Catch potential errors from singular matrix in Kriging
+            print(f"Skipping group ({temperature}, {potential}) due to Kriging error: {e}")
+            # As a fallback, you could use griddata here
+            # from scipy.interpolate import griddata
+            # print("...falling back to griddata (linear)")
+            # grid_z = griddata((x_proj, y_proj), colors, (grid_x, grid_y), method='linear')
+            continue  # Or just skip the group
+
+        # 8. Mask the interpolated grid
+        # We only want to show data inside the unit circle (radius=1)
+        mask = np.sqrt(grid_x ** 2 + grid_y ** 2) > 1
+        grid_z[mask] = np.nan
+
+        # --- Plotting Steps ---
+
+        # 9. Create the figure
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+        # 10. Plot the interpolated heatmap
+        # Use the local levels and norm
+        contour = ax.contourf(grid_x, grid_y, grid_z, levels=levels_local,
+                              cmap=cmap, norm=norm_local, extend='both')
+
+        # 11. Plot the original data points on top
+        # Use the local norm for consistent coloring
+        ax.scatter(x_proj_orig, y_proj_orig, s=60, c=colors_orig, cmap=cmap, norm=norm_local,
+                   edgecolors='black', zorder=12, linewidth=1,
+                   label='Original Data Points')
+
+        # 12. Add boundary circle and styling
+        boundary_circle = plt.Circle((0, 0), 1, color='black', fill=False,
+                                     linewidth=2, zorder=11)
+        ax.add_artist(boundary_circle)
+
+        ax.set_aspect('equal')
+        ax.set_xlim([-1.1, 1.1])
+        ax.set_ylim([-1.1, 1.1])
+        ax.axis('off')
+
+        # 13. Add title and color bar
+        ax.set_title(
+            f'Interpolated Stereographic Projection (Kriging - Gaussian)\nTemperature: {temperature}, Potential: {potential}',
+            fontsize=16, pad=20)
+
+        # The colorbar will automatically use the local norm from the 'contour' object
+        cbar = fig.colorbar(contour, ax=ax, shrink=0.8, aspect=20,
+                            label='Interpolated Mean Value')
+
+        # 14. Save the figure and show plot
+        filename = f'interpolated_stereograph_Kriging_T{temperature}_{potential}.png'
+        plt.savefig(filename, bbox_inches='tight', dpi=150)
+        print(f"Displaying plot for T={temperature}, P={potential}...")
+        plt.show()  # Show the plot as requested
+        plt.close(fig)  # Close the figure
+        generated_files.append(filename)
+
+    print(f"Successfully generated and displayed {len(generated_files)} plots.")
+    print("Generated files:", generated_files)
+
+# </editor-fold>
+
+# <editor-fold desc="***** Checking for coinciding points">
+print("***** Checking for coinciding points")
+Active = True
+if Active:
+    # Tolerance for considering points "coinciding"
+    tolerance = 1e-3
+    output_prefix = "CoincidingPoints"
+
+    for Key, Content in TdeGroupedTemperaturePotentialDirectionDescribeDic.items():
+        print(f"Dataset: {Key}")
+        results = []
+
+        # Loop over each Temperature and Potential group
+        for (temp, pot), group in Content.groupby(['Temperature', 'Potential']):
+            phi = group['Phi'].values
+            theta = group['Theta'].values
+            directions = group['Direction'].values
+            idx_list = group.index.tolist()
+
+            # Compare all pairs for closeness
+            for i in range(len(phi)):
+                for j in range(i + 1, len(phi)):
+                    if abs(phi[i] - phi[j]) < tolerance and abs(theta[i] - theta[j]) < tolerance:
+                        results.append({
+                            "Temperature": temp,
+                            "Potential": pot,
+                            "Direction1": directions[i],
+                            "Direction2": directions[j],
+                            "Phi1": phi[i],
+                            "Theta1": theta[i],
+                            "Phi2": phi[j],
+                            "Theta2": theta[j],
+                            "Index1": idx_list[i],
+                            "Index2": idx_list[j],
+                            "Based": Based,
+                            "Dataset": Key
+                        })
+
+        # Export CSV if any coincidences found
+        if results:
+            result_df = pd.DataFrame(results)
+            output_file = f"{output_prefix}_{Key}.csv"
+            result_df.to_csv(output_file, index=False)
+            print(f"Coinciding points exported to {output_file}")
+        else:
+            print(f"No coinciding points found in {Key} .")
+# </editor-fold>
+
 # <editor-fold desc="***** Repeat">
 print("***** Repeat")
+Active = False
+if Active:
+    BasedList = ["min", "mean"]
+
+    for Based in BasedList:
+        print(Based)
+
+        for Key, Content in TdeGroupedTemperaturePotentialDirectionDescribeDic.items():
+            print(Key)
+            print(Content)
+            Content['Repeating'] = Content[Based].round().astype(int)
+
+            DfTdeRepeated = (
+                Content.loc[Content.index.repeat(Content['Repeating'])]
+                .drop(columns=['Repeating', 'count', 'std', '25%', '50%', '75%'])
+                .reset_index(drop=True)
+            )
+
+            # export based on type
+            if Based == "min":
+                DfTdeRepeatedMin = DfTdeRepeated
+                DfTdeRepeatedMin.to_csv(PythonName + "-DfTdeRepeatedMin.csv", index=False)
+            elif Based == "mean":
+                DfTdeRepeatedMean = DfTdeRepeated
+                DfTdeRepeated.to_csv(PythonName + "-DfTdeRepeatedMean.csv", index=False)
+
+else:
+    DfTdeRepeatedMin = pd.read_csv(PythonName + "-DfTdeRepeatedMin.csv")
+    DfTdeRepeatedMean = pd.read_csv(PythonName + "-DfTdeRepeatedMean.csv")
+
+DfTdeRepeatedDic = {
+    'min': DfTdeRepeatedMin,
+    'mean': DfTdeRepeatedMean
+}
+# </editor-fold>
+
+# <editor-fold desc="***** Function Definition">
+print("***** Function Definition")
+def stereographic_projection(v):
+    """Project a 3D vector onto a 2D stereographic plane."""
+    v = np.array(v)
+    v = v / np.linalg.norm(v)  # Normalize
+    x, y, z = v
+    X = x / (1 + z)
+    Y = y / (1 + z)
+    return X, Y
+
+DirectionList = [
+    [1,2,1],
+    [0,1,0],
+    [0,1,1],
+    [0,3,1],
+   [-1,1,2],
+    [-1,1,0],
+    [-1,1,1],
+    [1,2,2],
+    [0,0,1],
+    [1,2,0],
+]
+# </editor-fold>
+
+# <editor-fold desc="***** Plot-Repeat-scatter">
+print("***** Plot-Repeat-scatter")
+Active = False
+if Active:
+    BasedList = ["min", "mean"]
+
+    for Based in BasedList:
+        print(Based)
+        for Based in BasedList:
+            print(Based)
+            if Based == "min":
+                DfTdeRepeated = DfTdeRepeatedMin
+            elif Based == "mean":
+                DfTdeRepeated = DfTdeRepeatedMean
+
+        LetterLabels = list("abcdefghijklmnopqrstuvwxyz")
+        LabelCounter = 0
+        # for potential, group in DfTdeRepeated.groupby('Potential'):
+        for Potential, group in DfTdeRepeated.groupby('Potential'):
+            Title = "ReversePoleFigure" + "-" + Potential + "-" + str(Based)
+            # print(Potential, group[["Direction","DirectionMb","UnitX","UnitY","UnitZ"]])
+
+            # Create Vector3d objects for UnitX, UnitY, UnitZ
+            Vectors = Vector3d(group[['UnitX', 'UnitY', 'UnitZ']].to_numpy())
+            # print(VectorsNumpy)
+
+            # Set the crystal symmetry
+            symmetry = C1
+
+            # Set the reference direction (Z-axis)
+            direction = Vector3d.zvector()
+
+
+            fig, ax = plt.subplots(figsize=(9, 4), subplot_kw={
+                "projection": "ipf",
+                "symmetry": symmetry,
+                "direction": direction
+            })
+
+            ax.scatter(Vectors, s=50, alpha=0.7, color="black")
+
+            # for idx, vector in enumerate(DirectionList):
+            #     X, Y = stereographic_projection(vector)
+            #     ax.scatter(X, Y, s=50, alpha=0.7, color="red")
+            #     ax.annotate(str(vector), (X, Y), textcoords="offset points", xytext=(5, 5), ha='left')
+
+            GroupGroupedCount = group.groupby('Direction')['Direction'].describe().reset_index()["count"]
+            # print(GroupGroupedCount)
+            IntensityMin = GroupGroupedCount.min()
+            IntensityMax = GroupGroupedCount.max()
+            # print(IntensityMin,IntensityMax)
+            IntensityMin = 0
+            IntensityMax = 1
+
+            group['GroupCount'] = group.groupby('Direction')['Direction'].transform('count')
+
+            # Then:
+            weights = group['GroupCount'].values
+
+            ax.pole_density_function(
+                Vectors,
+                weights=weights,
+                cmap="viridis",
+                vmin=IntensityMin,
+                vmax=IntensityMax,
+            )
+            fig.suptitle("(" + str(LetterLabels[LabelCounter]) + "): " + str(Potential), fontsize=24, y=1.00)
+            ax.set_title(Potential)
+            plt.tight_layout()
+            plt.show()
+# </editor-fold>
+
+# <editor-fold desc="***** Plot-Repeat-Stereograph-Density-KDE">
+print("***** Plot-Repeat-Stereograph-Density")
+Active = False
+if Active:
+    PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
+    for Key, Content in DfTdeRepeatedDic.items():
+        print(Key)
+        # print(Content)
+        for Name, Group in Content.groupby(['Temperature','Potential']):
+            print(Name)
+            Temperature = Name[0]
+            Potential = Name[1]
+
+            LetterLabels = list("abcdefghijklmnopqrstuvwxyz")
+            LabelCounter = 0
+            if Potential in PotentialList:
+                Group = Group.drop(
+                    columns=['Temperature', 'Potential',
+                             'Direction',
+                             'DirectionMb',
+                             "UnitX","UnitY","UnitZ", "R",
+                             'mean', 'min', 'max',
+                             'a1', 'a2',  'a3',   'h',
+                             'Reparameterization'])
+                print(Group)
+                Title = "Stereograph" + "-" + str(Temperature) + "-" + Potential + "-" + str(Key)
+                fig, ax = mplstereonet.subplots(figsize=(10, 8))
+
+                Group.to_csv(Title + ".csv", index=False)
+
+                Phi = Group["Phi"] #+ 90
+                Theta = Group["Theta"]
+                X = Group["X"]
+                Y = Group["Y"]
+                Z = Group["Z"]
+
+                Count = Group.groupby(["X", "Y", "Z"]).size()
+                RepeatMin = Count.min()
+                RepeatMax = Count.max()
+                print(RepeatMin, RepeatMax)
+
+                import matplotlib.colors as mcolors
+                NormalColors = mcolors.Normalize(vmin=RepeatMin, vmax=RepeatMax)
+                Levels = np.linspace(RepeatMin, RepeatMax, 200)
+                cax = ax.density_contourf(
+                    Phi, Theta,
+                    # Theta, Phi,
+                    measurement='poles',
+                    cmap='rainbow',
+                    # vmin=GroupAggMin, vmax=GroupAggMax,
+                    norm=NormalColors,
+                    levels=Levels  # <--- ADD THIS LINE
+                )
+
+                # Group["Count"] = Group.groupby("Direction")["Direction"].transform("count")
+                # weights = Group["Count"]
+                # NormalColors = mcolors.Normalize(vmin=weights.min(), vmax=weights.max())
+                # Levels = np.linspace(weights.min(), weights.max(), 200)
+                #
+                # cax = ax.density_contourf(
+                #     Phi, Theta,
+                #     measurement="poles",
+                #     cmap="rainbow",
+                #     weights=weights,
+                #     norm=NormalColors,
+                #     levels=Levels
+                # )
+
+                Xs, Ys = [], []
+                for phi, theta in zip(Phi, Theta):
+                    x_point, y_point = mplstereonet.stereonet_math.pole(phi, theta)
+                    Xs.append(x_point)
+                    Ys.append(y_point)
+
+                ax.scatter(
+                    Xs, Ys,
+                    edgecolors='black',  # Note: plural 'edgecolors'
+                    facecolors='none',  # Empty center
+                    s=20,
+                    alpha=0.7,
+                    label='_nolegend_'
+                )
+
+                for x_point, y_point, x, y, z in zip(Xs, Ys, X, Y, Z):
+                    ax.text(x_point, y_point+0.1, f"[{x:.0f},{y:.0f},{z:.0f}]",
+                            fontsize=10, ha='center', va='center')
+
+                ax.set_azimuth_ticks([])
+                ax.grid(False)
+
+                cbar = fig.colorbar(cax)
+                cbar.locator = mticker.MaxNLocator(nbins=5)
+                cbar.update_ticks()
+                cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.0f'))
+                cbar.set_label(str(Key) + " of PKA energy (eV)")
+
+
+                # plt.tight_layout()
+                fig.suptitle("(" + str(LetterLabels[LabelCounter]) + "): " +  str(Potential) + " at " + str(Temperature) + "K", fontsize=24, y=1.00)
+                plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
+                plt.show()
+                plt.close()
+                LabelCounter +=1
+# </editor-fold>
+
+# <editor-fold desc="***** Plot-Repeat-Stereograph-Density-Linear Interpolation">
+print("***** Plot-Repeat-Stereograph-Density-Linear Interpolation")
 
 Active = False
 if Active:
-    BasedList = ["min","mean"]
+    PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
 
-    for Based in BasedList:
-        # <editor-fold desc="Repeat">
-        print(Based)
+    for Key, Content in DfTdeRepeatedDic.items():
+        print(Key)
+        for Name, Group in Content.groupby(['Temperature','Potential']):
+            print(Name)
+            Temperature = Name[0]
+            Potential = Name[1]
 
-        for Key, Content in TdeDefectGroupedPotentialDirectionDescribeDic.items():
-            print(Key)
-            # print(Content)
-            Content['Repeating'] = Content[Based].round().astype(int)
+            LetterLabels = list("abcdefghijklmnopqrstuvwxyz")
+            LabelCounter = 0
 
-            # print(Content['Repeating'])
-            # os.system("pause")
+            if Potential in PotentialList:
+                Group = Group.drop(
+                    columns=['Temperature', 'Potential',
+                             'Direction','DirectionMb',
+                             "UnitX","UnitY","UnitZ", "R",
+                             'mean', 'min', 'max',
+                             'a1', 'a2',  'a3',   'h',
+                             'Reparameterization'],
+                    errors='ignore'
+                )
+                print(Group)
 
-            DfTdeRepeated = Content.loc[Content.index.repeat(Content['Repeating'])].drop(columns=['Repeating','count','std','25%','50%','75%']).reset_index(drop=True)
-            # print(DfTdeRepeated)
-            # </editor-fold>
+                Title = f"Stereograph-{Temperature}-{Potential}-{Key}"
+                fig, ax = mplstereonet.subplots(figsize=(10, 8))
 
-            # <editor-fold desc="Export">
-            print("Export")
-            # DfTdeRepeated.to_csv(PythonName + "-DfTdeRepeated-" + str(Based) + ".csv", index=False)
-            # DfTdeRepeated = pd.read_csv(PythonName + "-DfTdeRepeated" + ".csv")
-            # </editor-fold>
+                Group.to_csv(Title + ".csv", index=False)
 
-            # <editor-fold desc="Definition">
-            print("Definition")
-            def stereographic_projection(v):
-                """Project a 3D vector onto a 2D stereographic plane."""
-                v = np.array(v)
-                v = v / np.linalg.norm(v)  # Normalize
-                x, y, z = v
-                X = x / (1 + z)
-                Y = y / (1 + z)
-                return X, Y
+                import numpy as np
+                from scipy.interpolate import griddata
+                import matplotlib.colors as mcolors
+                import matplotlib.ticker as mticker
 
-            DirectionList = [
-                [1,2,1],
-                [0,1,0],
-                [0,1,1],
-                [0,3,1],
-               [-1,1,2],
-                [-1,1,0],
-                [-1,1,1],
-                [1,2,2],
-                [0,0,1],
-                [1,2,0],
-            ]
-            # </editor-fold>
+                # Count repeats per unique direction
+                GroupCounts = Group.groupby(['Theta','Phi','X','Y','Z']).size().reset_index(name='Count')
+                RepeatMin = GroupCounts['Count'].min()
+                RepeatMax = GroupCounts['Count'].max()
+                print("RepeatMin, RepeatMax:", RepeatMin, RepeatMax)
 
-            # <editor-fold desc="Plot-Repeat">
-            print("Plot-Repeat")
-            Active = False
-            if Active:
-                LetterLabels = list("abcdefghijklmnopqrstuvwxyz")
-                LabelCounter = 0
-                # for potential, group in DfTdeRepeated.groupby('Potential'):
-                for Potential, group in DfTdeRepeated.groupby('Potential'):
-                    Title = "ReversePoleFigure" + "-" + Potential + "-" + str(Based)
-                    # print(Potential, group[["Direction","DirectionMb","UnitX","UnitY","UnitZ"]])
+                # Prepare grid for interpolation
+                phi_vals = GroupCounts['Phi'].values
+                theta_vals = GroupCounts['Theta'].values
+                counts = GroupCounts['Count'].values
 
-                    # Create Vector3d objects for UnitX, UnitY, UnitZ
-                    Vectors = Vector3d(group[['UnitX', 'UnitY', 'UnitZ']].to_numpy())
-                    # print(VectorsNumpy)
+                phi_grid = np.linspace(phi_vals.min(), phi_vals.max(), 200)
+                theta_grid = np.linspace(theta_vals.min(), theta_vals.max(), 200)
+                PHI_GRID, THETA_GRID = np.meshgrid(phi_grid, theta_grid)
 
-                    # Set the crystal symmetry
-                    symmetry = C1
+                # Linear interpolation
+                count_grid = griddata(
+                    points=(phi_vals, theta_vals),
+                    values=counts,
+                    xi=(PHI_GRID, THETA_GRID),
+                    method='linear',
+                    fill_value=0
+                )
 
-                    # Set the reference direction (Z-axis)
-                    direction = Vector3d.zvector()
+                # Convert to stereonet coordinates
+                Xs_grid, Ys_grid = mplstereonet.stereonet_math.pole(PHI_GRID, THETA_GRID)
 
+                # Plot interpolated contour
+                cax = ax.contourf(
+                    Xs_grid, Ys_grid, count_grid,
+                    levels=np.linspace(RepeatMin, RepeatMax, 200),
+                    cmap='rainbow'
+                )
 
-                    fig, ax = plt.subplots(figsize=(9, 4), subplot_kw={
-                        "projection": "ipf",
-                        "symmetry": symmetry,
-                        "direction": direction
-                    })
+                # Scatter original points
+                Xs_pts, Ys_pts = mplstereonet.stereonet_math.pole(phi_vals, theta_vals)
+                ax.scatter(Xs_pts, Ys_pts, c='black', s=20)
 
-                    ax.scatter(Vectors, s=50, alpha=0.7, color="black")
+                # Add [X,Y,Z] labels
+                for x_point, y_point, x, y, z in zip(Xs_pts, Ys_pts,
+                                                     GroupCounts['X'],
+                                                     GroupCounts['Y'],
+                                                     GroupCounts['Z']):
+                    ax.text(x_point, y_point+0.1, f"[{x:.0f},{y:.0f},{z:.0f}]",
+                            fontsize=10, ha='center', va='center')
 
-                    # for idx, vector in enumerate(DirectionList):
-                    #     X, Y = stereographic_projection(vector)
-                    #     ax.scatter(X, Y, s=50, alpha=0.7, color="red")
-                    #     ax.annotate(str(vector), (X, Y), textcoords="offset points", xytext=(5, 5), ha='left')
+                ax.set_azimuth_ticks([])
+                ax.grid(False)
 
-                    GroupGroupedCount = group.groupby('Direction')['Direction'].describe().reset_index()["count"]
-                    # print(GroupGroupedCount)
-                    IntensityMin = GroupGroupedCount.min()
-                    IntensityMax = GroupGroupedCount.max()
-                    # print(IntensityMin,IntensityMax)
-                    IntensityMin = 0
-                    IntensityMax = 1
+                # Colorbar
+                cbar = fig.colorbar(cax)
+                cbar.locator = mticker.MaxNLocator(nbins=5)
+                cbar.update_ticks()
+                cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.0f'))
+                cbar.set_label(f"{Key} of PKA energy (eV)")
 
-                    group['GroupCount'] = group.groupby('Direction')['Direction'].transform('count')
+                # Title
+                fig.suptitle(f"({LetterLabels[LabelCounter]}): {Potential} at {Temperature}K",
+                             fontsize=24, y=1.00)
 
-                    # Then:
-                    weights = group['GroupCount'].values
+                # Save and show figure
+                plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
+                plt.show()
+                plt.close()
+                LabelCounter += 1
+# </editor-fold>
 
-                    ax.pole_density_function(
-                        Vectors,
-                        weights=weights,
-                        cmap="viridis",
-                        vmin=IntensityMin,
-                        vmax=IntensityMax,
-                    )
-                    fig.suptitle("(" + str(LetterLabels[LabelCounter]) + "): " + str(Potential), fontsize=24, y=1.00)
-                    ax.set_title(Potential)
-                    plt.tight_layout()
-                    plt.show()
-            # </editor-fold>
+# <editor-fold desc="***** Plot-Repeat-Stereograph-Density (Cubic Interpolation)">
+print("***** Plot-Repeat-Stereograph-Density (Cubic Interpolation)")
+Active = False
+if Active:
+    PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
 
-            # <editor-fold desc="Plot-Repeat-Stereograph">
-            print("Plot-Repeat-Stereograph")
-            Active = True
-            if Active:
-                PotentialList = ["M2R", "M3R", "BMD192R", "M2", "M3", "BMD192", "TabGap1", "TabGap2"]
-                for Name, Group in DfTdeRepeated.groupby('Potential'):
-                    print(Name)
-                    # print(Group["Direction"])
-                    Potential = Name
+    for Key, Content in DfTdeRepeatedDic.items():
+        print(Key)
+        for Name, Group in Content.groupby(['Temperature','Potential']):
+            print(Name)
+            Temperature = Name[0]
+            Potential = Name[1]
 
-                    LetterLabels = list("abcdefghijklmnopqrstuvwxyz")
-                    LabelCounter = 0
-                    if Potential in PotentialList:
-                        Title = "Stereograph" + "-" + Potential + "-" + str(Based)
-                        fig, ax = mplstereonet.subplots(figsize=(10, 8))
+            LetterLabels = list("abcdefghijklmnopqrstuvwxyz")
+            LabelCounter = 0
 
-                        Phi = Group["Phi"] + 90
-                        Theta = Group["Theta"]
-                        X = Group["X"]
-                        Y = Group["Y"]
-                        Z = Group["Z"]
+            if Potential in PotentialList:
+                Group = Group.drop(
+                    columns=['Temperature', 'Potential',
+                             'Direction','DirectionMb',
+                             "UnitX","UnitY","UnitZ", "R",
+                             'mean', 'min', 'max',
+                             'a1', 'a2',  'a3',   'h',
+                             'Reparameterization'],
+                    errors='ignore'
+                )
+                print(Group)
 
-                        GroupAgg = Group[Based].agg(['min', 'max', 'mean'])
-                        # print(GroupAgg)
-                        GroupAggMin = GroupAgg.loc["min"]
-                        # GroupAggMin = 0
-                        GroupAggMax = GroupAgg.loc["max"]+20
-                        # GroupAggMax = np.percentile(Group[Based], 99)  # Use 99th percentile to exclude extreme peaks
-                        # GroupAggMean = Group[Based].mean()
-                        # GroupAggStd = Group[Based].std()
-                        # GroupAggMax = max(GroupAgg.loc["max"], GroupAggMean + 2 * GroupAggStd)
-                        GroupAggMean = GroupAgg.loc["mean"]
-                        # print(GroupAggMin, GroupAggMax, GroupAggMean)
+                Title = f"Stereograph-{Temperature}-{Potential}-{Key}"
+                fig, ax = mplstereonet.subplots(figsize=(10, 8))
 
-                        import matplotlib.colors as mcolors
-                        NormalColors = mcolors.Normalize(vmin=GroupAggMin, vmax=GroupAggMax)
-                        Levels = np.linspace(GroupAggMin, GroupAggMax, 200)
+                Group.to_csv(Title + ".csv", index=False)
 
-                        cax = ax.density_contourf(
-                            Phi, Theta,
-                            measurement='poles',
-                            cmap='rainbow',
-                            # vmin=GroupAggMin, vmax=GroupAggMax,
-                            norm=NormalColors,
-                            levels=Levels  # <--- ADD THIS LINE
-                        )
+                import numpy as np
+                from scipy.interpolate import griddata
+                import matplotlib.colors as mcolors
+                import matplotlib.ticker as mticker
 
-                        Xs, Ys = [], []
-                        for phi, theta in zip(Phi, Theta):
-                            x_point, y_point = mplstereonet.stereonet_math.pole(phi, theta)
-                            Xs.append(x_point)
-                            Ys.append(y_point)
+                # Count repeats per unique direction
+                GroupCounts = Group.groupby(['Theta','Phi','X','Y','Z']).size().reset_index(name='Count')
+                RepeatMin = GroupCounts['Count'].min()
+                RepeatMax = GroupCounts['Count'].max()
+                print("RepeatMin, RepeatMax:", RepeatMin, RepeatMax)
 
-                        ax.scatter(
-                            Xs, Ys,
-                            edgecolors='black',  # Note: plural 'edgecolors'
-                            facecolors='none',  # Empty center
-                            s=20,
-                            alpha=0.7,
-                            label='_nolegend_'
-                        )
+                # Prepare grid for interpolation
+                phi_vals = GroupCounts['Phi'].values
+                theta_vals = GroupCounts['Theta'].values
+                counts = GroupCounts['Count'].values
 
-                        for x_point, y_point, x, y, z in zip(Xs, Ys, X, Y, Z):
-                            ax.text(x_point, y_point+0.1, f"[{x:.0f},{y:.0f},{z:.0f}]",
-                                    fontsize=10, ha='center', va='center')
+                phi_grid = np.linspace(phi_vals.min(), phi_vals.max(), 200)
+                theta_grid = np.linspace(theta_vals.min(), theta_vals.max(), 200)
+                PHI_GRID, THETA_GRID = np.meshgrid(phi_grid, theta_grid)
 
-                        ax.set_azimuth_ticks([])
-                        ax.grid(False)
+                # Cubic interpolation
+                count_grid = griddata(
+                    points=(phi_vals, theta_vals),
+                    values=counts,
+                    xi=(PHI_GRID, THETA_GRID),
+                    method='cubic',
+                    fill_value=0
+                )
 
-                        cbar = fig.colorbar(cax)
-                        cbar.locator = mticker.MaxNLocator(nbins=5)
-                        cbar.update_ticks()
-                        cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.0f'))
-                        cbar.set_label(str(Based) + " of PKA energy (eV)")
+                # Convert to stereonet coordinates
+                Xs_grid, Ys_grid = mplstereonet.stereonet_math.pole(PHI_GRID, THETA_GRID)
 
+                # Plot interpolated contour
+                cax = ax.contourf(
+                    Xs_grid, Ys_grid, count_grid,
+                    levels=np.linspace(RepeatMin, RepeatMax, 200),
+                    cmap='rainbow'
+                )
 
-                        # plt.tight_layout()
-                        fig.suptitle("(" + str(LetterLabels[LabelCounter]) + "): " +  str(Potential), fontsize=24, y=1.00)
-                        plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
-                        # plt.show()
-                        plt.close()
-                        LabelCounter +=1
-            # </editor-fold>
+                # Scatter original points
+                Xs_pts, Ys_pts = mplstereonet.stereonet_math.pole(phi_vals, theta_vals)
+                ax.scatter(Xs_pts, Ys_pts, c='black', s=20)
 
+                # Add [X,Y,Z] labels
+                for x_point, y_point, x, y, z in zip(Xs_pts, Ys_pts,
+                                                     GroupCounts['X'],
+                                                     GroupCounts['Y'],
+                                                     GroupCounts['Z']):
+                    ax.text(x_point, y_point+0.1, f"[{x:.0f},{y:.0f},{z:.0f}]",
+                            fontsize=10, ha='center', va='center')
+
+                ax.set_azimuth_ticks([])
+                ax.grid(False)
+
+                # Colorbar
+                cbar = fig.colorbar(cax)
+                cbar.locator = mticker.MaxNLocator(nbins=5)
+                cbar.update_ticks()
+                cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.0f'))
+                cbar.set_label(f"{Key} of PKA energy (eV)")
+
+                # Title
+                fig.suptitle(f"({LetterLabels[LabelCounter]}): {Potential} at {Temperature}K",
+                             fontsize=24, y=1.00)
+
+                # Save and show figure
+                plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
+                plt.show()
+                plt.close()
+                LabelCounter += 1
+# </editor-fold>
+
+# <editor-fold desc="***** Plot-Repeat-Stereograph-Density (Linear Interpolation in XYZ, fixed)">
+print("***** Plot-Repeat-Stereograph-Density (Linear Interpolation in XYZ)")
+Active = False
+if Active:
+    PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2", "MtpPd"]
+
+    for Key, Content in DfTdeRepeatedDic.items():
+        print(Key)
+        for Name, Group in Content.groupby(['Temperature','Potential']):
+            print(Name)
+            Temperature = Name[0]
+            Potential = Name[1]
+
+            LetterLabels = list("abcdefghijklmnopqrstuvwxyz")
+            LabelCounter = 0
+
+            if Potential in PotentialList:
+                Group = Group.drop(
+                    columns=['Temperature', 'Potential',
+                             'Direction','DirectionMb',
+                             "UnitX","UnitY","UnitZ", "R",
+                             'mean', 'min', 'max',
+                             'a1', 'a2',  'a3',   'h',
+                             'Reparameterization'],
+                    errors='ignore'
+                )
+                print(Group)
+
+                Title = f"Stereograph-{Temperature}-{Potential}-{Key}"
+                fig, ax = mplstereonet.subplots(figsize=(10, 8))
+                Group.to_csv(Title + ".csv", index=False)
+
+                import numpy as np
+                from scipy.interpolate import griddata
+                from scipy.spatial import Delaunay
+                import matplotlib.ticker as mticker
+
+                # Count repeats per unique direction
+                GroupCounts = Group.groupby(['X','Y','Z']).size().reset_index(name='Count')
+                RepeatMin = GroupCounts['Count'].min()
+                RepeatMax = GroupCounts['Count'].max()
+                print("RepeatMin, RepeatMax:", RepeatMin, RepeatMax)
+
+                # Prepare 3D points for interpolation
+                points = GroupCounts[['X','Y','Z']].values
+                values = GroupCounts['Count'].values
+
+                # Create a 3D grid
+                grid_x = np.linspace(points[:,0].min(), points[:,0].max(), 100)
+                grid_y = np.linspace(points[:,1].min(), points[:,1].max(), 100)
+                grid_z = np.linspace(points[:,2].min(), points[:,2].max(), 100)
+                GX, GY, GZ = np.meshgrid(grid_x, grid_y, grid_z)
+
+                # Flatten grid for interpolation
+                grid_points = np.column_stack((GX.ravel(), GY.ravel(), GZ.ravel()))
+
+                # Linear interpolation in 3D
+                count_grid = griddata(points, values, grid_points, method='linear')
+
+                # Mask points outside convex hull
+                hull = Delaunay(points)
+                mask = hull.find_simplex(grid_points) < 0
+                count_grid[mask] = np.nan
+
+                # Convert Cartesian to Theta, Phi
+                R = np.sqrt(GX.ravel()**2 + GY.ravel()**2 + GZ.ravel()**2)
+                Theta_grid = np.arccos(GZ.ravel()/R) * 180/np.pi  # in degrees
+                Phi_grid = np.arctan2(GY.ravel(), GX.ravel()) * 180/np.pi  # in degrees
+                Phi_grid[Phi_grid < 0] += 360  # make 0–360 range
+
+                # Convert to stereonet plot coordinates
+                Xs_grid, Ys_grid = mplstereonet.stereonet_math.pole(Phi_grid, Theta_grid)
+
+                # Reshape for plotting
+                slice_idx = len(grid_z)//2
+                count_slice = count_grid.reshape(GX.shape)[:,:,slice_idx]
+                Xs_slice = Xs_grid.reshape(GX.shape)[:,:,slice_idx]
+                Ys_slice = Ys_grid.reshape(GX.shape)[:,:,slice_idx]
+
+                # Plot contour
+                cax = ax.contourf(
+                    Xs_slice, Ys_slice, count_slice,
+                    levels=np.linspace(RepeatMin, RepeatMax, 200),
+                    cmap='rainbow'
+                )
+
+                # Scatter original points
+                Xs_pts, Ys_pts = mplstereonet.stereonet_math.pole(Group['Phi'], Group['Theta'])
+                ax.scatter(Xs_pts, Ys_pts, c='black', s=20)
+
+                # Add [X,Y,Z] labels
+                for x_point, y_point, x, y, z in zip(Xs_pts, Ys_pts,
+                                                     GroupCounts['X'],
+                                                     GroupCounts['Y'],
+                                                     GroupCounts['Z']):
+                    ax.text(x_point, y_point+0.1, f"[{x:.0f},{y:.0f},{z:.0f}]",
+                            fontsize=10, ha='center', va='center')
+
+                ax.set_azimuth_ticks([])
+                ax.grid(False)
+
+                # Colorbar
+                cbar = fig.colorbar(cax)
+                cbar.locator = mticker.MaxNLocator(nbins=5)
+                cbar.update_ticks()
+                cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.0f'))
+                cbar.set_label(f"{Key} of PKA energy (eV)")
+
+                # Title
+                fig.suptitle(f"({LetterLabels[LabelCounter]}): {Potential} at {Temperature}K",
+                             fontsize=24, y=1.00)
+
+                # Save and show
+                plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight')
+                plt.show()
+                plt.close()
+                LabelCounter += 1
 # </editor-fold>
 
 # </editor-fold>
@@ -3252,14 +4118,14 @@ if Active:
 # </editor-fold>
 
 # <editor-fold desc="***** Plot-inverse pole figures-contour and points-TdeGroupedPotentialDirectionDescribe">
-Active = False
+Active = True
 if Active:
     print("***** Plot-inverse pole figures-contour and points-TdeGroupedPotentialDirectionDescribe")
     BasedList = ["min", "mean"]
     for Based in BasedList:
         print("---" + str(Based))
 
-        for Key, Content in TdeDefectGroupedPotentialDirectionDescribeDic.items():
+        for Key, Content in TdeGroupedTemperaturePotentialDirectionDescribeDic.items():
             print("--" + str(Key))
             # print(Content)
 
@@ -3285,9 +4151,9 @@ if Active:
                 LetterLabels = list("abcdefghijklmnopqrstuvwxyz")
                 LabelCounter = 0
 
-                # for Potential, Group in DfTdeRepeated.groupby('Potential'):
-                for Potential, Group in Content.groupby('Potential'):
-                    Title = "PoleFigureDensity" + "-" + Potential + "-" + str(Based)
+                # iterate Temperature x Potential combinations
+                for (Temperature, Potential), Group in Content.groupby(['Temperature', 'Potential']):
+                    Title = "PoleFigureDensity" + "-" + str(Temperature) + "-" + Potential + "-" + str(Based)
 
                     # <editor-fold desc="Reflection">
                     Reflection = True
@@ -3356,10 +4222,10 @@ if Active:
                     Vectors = Vector3d(UnitStack)
                         # print(Potential, Group[["Direction", "DirectionMb", "X", "Y", "Z", "UnitX", "UnitY", "UnitZ"]])
 
-                    # print(Potential, Group[
-                    #     ["Direction", "DirectionMb", "X", "Y", "Z", "UnitX", "UnitY", "UnitZ", 'RotatedX', 'RotatedY',
-                    #      'RotatedZ']])
-                    print(Potential, Group[[
+                    # print(Potential, Group[[
+                    #     "Direction", "DirectionMb" ,"min" ,"UnitX" ,"UnitY" ,"UnitZ"
+                    # ]])
+                    print(Temperature, Potential, Group[[
                         "Direction", "DirectionMb" ,"min" ,"UnitX" ,"UnitY" ,"UnitZ"
                     ]])
                     # </editor-fold>
@@ -3505,63 +4371,7 @@ if Active:
                                             ha='center', va='center', fontweight='bold', zorder=ZOrder)
                         # </editor-fold>
 
-                        # ax.annotate('[001]', xy=ax._projection.vector2xy(Vector3d([0+Offset,0+Offset,1+Offset])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[100]', xy=ax._projection.vector2xy(Vector3d([1+Offset,0+Offset,0+Offset])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[110]', xy=ax._projection.vector2xy(Vector3d([1+Offset,1+Offset,0+Offset])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[210]', xy=ax._projection.vector2xy(Vector3d([2+Offset,1+Offset,0+Offset])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[111]', xy=ax._projection.vector2xy(Vector3d([1+Offset,1+Offset,1+Offset])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[112]', xy=ax._projection.vector2xy(Vector3d([1+Offset,1+Offset,2+Offset])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[101]', xy=ax._projection.vector2xy(Vector3d([1+Offset,0+Offset,1+Offset])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[301]', xy=ax._projection.vector2xy(Vector3d([3+Offset,0+Offset,1+Offset])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[212]', xy=ax._projection.vector2xy(Vector3d([2+Offset,1+Offset,2+Offset])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[211]', xy=ax._projection.vector2xy(Vector3d([2+Offset,1+Offset,1+Offset])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-
-                        Offset = 0
-                        # [0,0,1] [0,0,1]
-                        # [0,1,0] [1,0,0]
-                        # [-1,1,0] [1,1,0]
-                        # [-1,2,0] [2,1,0]
-                        # [-1,1,1] [1,1,1]
-                        # [-1,1,2] [1,1,2]
-                        # [0,1,1] [1,0,1]
-                        # [0,3,1] [3,0,1]
-                        # [-1,2,2] [2,1,2]
-                        # [-1,2,1] [2,1,1]
-
-                        # ax.annotate('[001]', xy=ax._projection.vector2xy(Vector3d([0,0,1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[010]', xy=ax._projection.vector2xy(Vector3d([1,0,0])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[-110]', xy=ax._projection.vector2xy(Vector3d([1,1,0])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[-120]', xy=ax._projection.vector2xy(Vector3d([2,1,0])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[-111]', xy=ax._projection.vector2xy(Vector3d([1,1,1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[-112]', xy=ax._projection.vector2xy(Vector3d([1,1,2])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[011]', xy=ax._projection.vector2xy(Vector3d([1,0,1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[031]', xy=ax._projection.vector2xy(Vector3d([3,0,1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[-122]', xy=ax._projection.vector2xy(Vector3d([2,1,2])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate('[-121]', xy=ax._projection.vector2xy(Vector3d([2,1,1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-
-                        # ax.annotate(r'$[001]$', xy=ax._projection.vector2xy(Vector3d([0, 0, 1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[010]$', xy=ax._projection.vector2xy(Vector3d([1, 0, 0])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}10]$', xy=ax._projection.vector2xy(Vector3d([1, 1, 0])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}20]$', xy=ax._projection.vector2xy(Vector3d([2, 1, 0])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}11]$', xy=ax._projection.vector2xy(Vector3d([1, 1, 1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}12]$', xy=ax._projection.vector2xy(Vector3d([1, 1, 2])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[011]$', xy=ax._projection.vector2xy(Vector3d([1, 0, 1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[031]$', xy=ax._projection.vector2xy(Vector3d([3, 0, 1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}22]$', xy=ax._projection.vector2xy(Vector3d([2, 1, 2])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}21]$', xy=ax._projection.vector2xy(Vector3d([2, 1, 1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-
-                        # ax.annotate(r'$[0001]$', xy=ax._projection.vector2xy(Vector3d([0, 0, 1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}2\overline{1}0]$', xy=ax._projection.vector2xy(Vector3d([1, 0, 0])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}10 0]$', xy=ax._projection.vector2xy(Vector3d([1, 1, 0])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[01\overline{1}0]$', xy=ax._projection.vector2xy(Vector3d([2, 1, 0])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}10 1]$', xy=ax._projection.vector2xy(Vector3d([1, 1, 1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}10 2]$', xy=ax._projection.vector2xy(Vector3d([1, 1, 2])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}2\overline{1}3]$', xy=ax._projection.vector2xy(Vector3d([1, 0, 1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[\overline{1}2\overline{1}1]$', xy=ax._projection.vector2xy(Vector3d([3, 0, 1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[01\overline{1}2]$', xy=ax._projection.vector2xy(Vector3d([2, 1, 2])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-                        # ax.annotate(r'$[01\overline{1}1]$', xy=ax._projection.vector2xy(Vector3d([2, 1, 1])), fontsize=FontSize, color= Color, ha='center', va='center',fontweight='bold', zorder=ZOrder)
-
-                        fig.suptitle("(" + str(LetterLabels[LabelCounter]) + "): " + str(Potential), fontsize=24, y=1.00,
+                        fig.suptitle("(" + str(LetterLabels[LabelCounter]) + "): " + str(Potential) + " T=" + str(Temperature), fontsize=24, y=1.00,
                                      color=Color)
                         # ax.set_title(Potential)
                         plt.tight_layout()
@@ -3578,337 +4388,336 @@ if Active:
                 LetterLabels = list("abcdefghijklmnopqrstuvwxyz")
                 LabelCounter = 0
 
-                PotentialList = ["M2R", "M3R", "BMD192R", "TabGap1", "TabGap2"]
+                # iterate Temperature x Potential combinations
+                for (Temperature, Potential), Group in Content.groupby(['Temperature', 'Potential']):
+                    print(f"- T={Temperature} P={Potential}")
 
-                for Potential in PotentialList:
-                    if Potential in Content['Potential'].values:
-                        Group = Content[Content['Potential'] == Potential]
-                        print("-" + Potential)
+                    # ensure we work on a copy
+                    Group = Group.copy()
+                    # print(Group.columns)
+                    # print(Group[["Direction","Repeating"]])
 
-                        # print(Group.columns)
-                        # print(Group[["Direction","Repeating"]])
+                    Group["TransformedX"] = Group['UnitX']
+                    Group["TransformedY"] = Group['UnitY']
+                    Group["TransformedZ"] = Group['UnitZ']
 
-                        Group["TransformedX"] = Group['UnitX']
-                        Group["TransformedY"] = Group['UnitY']
-                        Group["TransformedZ"] = Group['UnitZ']
+                    # <editor-fold desc="Reflection">
+                    Reflection = False
+                    if Reflection:
+                        MirrorMatrix = np.array([
+                            [-1, 0, 0],
+                            [0, 1, 0],
+                            [0, 0, 1]
+                        ])
 
-                        # <editor-fold desc="Reflection">
-                        Reflection = False
-                        if Reflection:
-                            MirrorMatrix = np.array([
-                                [-1, 0, 0],
-                                [0, 1, 0],
-                                [0, 0, 1]
-                            ])
+                        OriginalStack = np.column_stack([
+                            Group['UnitX'].values,
+                            Group['UnitY'].values,
+                            Group['UnitZ'].values
+                        ])
 
-                            OriginalStack = np.column_stack([
-                                Group['UnitX'].values,
-                                Group['UnitY'].values,
-                                Group['UnitZ'].values
-                            ])
+                        MirroredStack = np.array([
+                            MirrorMatrix @ vec if vec[0] > 0 else vec
+                            for vec in OriginalStack
+                        ])
 
-                            MirroredStack = np.array([
-                                MirrorMatrix @ vec if vec[0] > 0 else vec
-                                for vec in OriginalStack
-                            ])
+                        Group["TransformedX"] = MirroredStack[:, 0]
+                        Group["TransformedY"] = MirroredStack[:, 1]
+                        Group["TransformedZ"] = MirroredStack[:, 2]
 
-                            Group["TransformedX"] = MirroredStack[:, 0]
-                            Group["TransformedY"] = MirroredStack[:, 1]
-                            Group["TransformedZ"] = MirroredStack[:, 2]
+                    # print(Group.columns)
+                    # print(Group[["Direction", "Repeating", 'TransformedX', 'TransformedY', 'TransformedZ']])
 
-                        # print(Group.columns)
-                        # print(Group[["Direction", "Repeating", 'TransformedX', 'TransformedY', 'TransformedZ']])
+                    # </editor-fold>
 
-                        # </editor-fold>
+                    # <editor-fold desc="Rotation">
+                    Rotating = True
+                    if Rotating:
+                        RotationDeg = -90
+                        RotationRad = np.deg2rad(RotationDeg)
+                        # RotationRad = np.deg2rad(-1.1)
+                        # print(RotationRad)
 
-                        # <editor-fold desc="Rotation">
-                        Rotating = True
-                        if Rotating:
-                            RotationDeg = -90
-                            RotationRad = np.deg2rad(RotationDeg)
-                            # RotationRad = np.deg2rad(-1.1)
-                            # print(RotationRad)
+                        RotationMatrix = np.array([
+                            [np.cos(RotationRad), -np.sin(RotationRad), 0],
+                            [np.sin(RotationRad), np.cos(RotationRad), 0],
+                            [0, 0, 1]
+                        ])
 
-                            RotationMatrix = np.array([
-                                [np.cos(RotationRad), -np.sin(RotationRad), 0],
-                                [np.sin(RotationRad), np.cos(RotationRad), 0],
-                                [0, 0, 1]
-                            ])
+                        OriginalStack = np.column_stack([
+                            Group['X'].values,
+                            Group['Y'].values,
+                            Group['Z'].values
+                        ])
+                        RotatedStack = OriginalStack @ RotationMatrix.T # this is just to save the rotation. not used anywhere
+                        Group["RotateX"] = RotatedStack[:, 0].round().astype(int)
+                        Group["RotateY"] = RotatedStack[:, 1].round().astype(int)
+                        Group["RotateZ"] = RotatedStack[:, 2].round().astype(int)
 
-                            OriginalStack = np.column_stack([
-                                Group['X'].values,
-                                Group['Y'].values,
-                                Group['Z'].values
-                            ])
-                            RotatedStack = OriginalStack @ RotationMatrix.T # this is just to save the rotation. not used anywhere
-                            Group["RotateX"] = RotatedStack[:, 0].round().astype(int)
-                            Group["RotateY"] = RotatedStack[:, 1].round().astype(int)
-                            Group["RotateZ"] = RotatedStack[:, 2].round().astype(int)
-
-                            OriginalStack = np.column_stack([
-                                Group['TransformedX'].values,
-                                Group['TransformedY'].values,
-                                Group['TransformedZ'].values
-                            ])
-                            RotatedStack = OriginalStack @ RotationMatrix.T
-                            Group["TransformedX"] = RotatedStack[:, 0]
-                            Group["TransformedY"] = RotatedStack[:, 1]
-                            Group["TransformedZ"] = RotatedStack[:, 2]
-
-                            # print(Group[["Direction","RotateX","RotateY","RotateZ"]])
-                            # os.system("pause")
-                        else:
-                            RotationMatrix = np.array([
-                                [1, 0, 0],
-                                [0, 1, 0],
-                                [0, 0, 1]
-                            ])
-
-                        UnitStack = np.column_stack([
+                        OriginalStack = np.column_stack([
                             Group['TransformedX'].values,
                             Group['TransformedY'].values,
                             Group['TransformedZ'].values
                         ])
-                        Vectors = Vector3d(UnitStack)
-                        # print(Vectors)
+                        RotatedStack = OriginalStack @ RotationMatrix.T
+                        Group["TransformedX"] = RotatedStack[:, 0]
+                        Group["TransformedY"] = RotatedStack[:, 1]
+                        Group["TransformedZ"] = RotatedStack[:, 2]
+
+                        # print(Group[["Direction","RotateX","RotateY","RotateZ"]])
+                        # os.system("pause")
+                    else:
+                        RotationMatrix = np.array([
+                            [1, 0, 0],
+                            [0, 1, 0],
+                            [0, 0, 1]
+                        ])
+
+                    UnitStack = np.column_stack([
+                        Group['TransformedX'].values,
+                        Group['TransformedY'].values,
+                        Group['TransformedZ'].values
+                    ])
+                    Vectors = Vector3d(UnitStack)
+                    # print(Vectors)
+                    # </editor-fold>
+
+                    # <editor-fold desc="Filter">
+                    Filtering = True
+                    if Filtering:
+                        # Filter out directions with positive x-component
+                        OriginalStack = np.column_stack([
+                            Group['TransformedX'].values,
+                            Group['TransformedY'].values,
+                            Group['TransformedZ'].values
+                        ])
+                        # print(OriginalStack)
+
+                        Mask = OriginalStack[:, 1] >= 0
+
+                        # Apply mask to keep only valid vectors
+                        FilteredStack = OriginalStack[Mask]
+
+                        # Also filter the corresponding rows in Group
+                        Group = Group[Mask].copy()
+
+                        # Assign transformed values (same as original in this case)
+                        Group["TransformedX"] = FilteredStack[:, 0]
+                        Group["TransformedY"] = FilteredStack[:, 1]
+                        Group["TransformedZ"] = FilteredStack[:, 2]
+                    # </editor-fold>
+
+                    # <editor-fold desc="Gridding">
+                    n_grid = 500#5000
+                    SectionMinDeg = 0
+                    SectionMaxDeg = 45
+                    SectionMinRad = np.deg2rad(SectionMinDeg)
+                    SectionMaxRad = np.deg2rad(SectionMaxDeg)
+                    GridSpacePhi = np.linspace(SectionMinRad, SectionMaxRad, n_grid)
+                    GridSpaceTheta = np.linspace(0, np.pi / 2, n_grid)
+                    MeshPhi, MeshTheta = np.meshgrid(GridSpacePhi, GridSpaceTheta)
+                    GridX = np.sin(MeshTheta) * np.cos(MeshPhi)
+                    GridY = np.sin(MeshTheta) * np.sin(MeshPhi)
+                    GridZ = np.cos(MeshTheta)
+                    X_proj = GridX / (1 + GridZ)
+                    Y_proj = GridY / (1 + GridZ)
+                    GridPoints = np.column_stack([GridX.ravel(), GridY.ravel(), GridZ.ravel()])
+                    # print(GridPoints)
+                    Weights = Group[Based].values
+                    # </editor-fold>
+
+                    # <editor-fold desc="Fitting">
+                    # print(list(Group))
+                    # print(Group[['Direction',"RotateX","RotateY","RotateZ", Based]])
+                    FittingList = ["nearest","rbf"]
+                    for Fitting in FittingList:
+                        print(Fitting)
+                        if Fitting == "Kde":
+                            KdeModel = KernelDensity(kernel='gaussian', bandwidth=0.1)
+                            KdeModel.fit(Vectors.data, sample_weight=Weights)
+                            log_density = KdeModel.score_samples(GridPoints)
+                            # print(log_density)
+                            Density = np.exp(log_density).reshape(GridX.shape)
+                            # print("Min Density:", np.min(Density))
+                            # print("Max Density:", np.max(Density))
+                            # print(Density)
+                        elif Fitting == "nearest":
+                            from scipy.interpolate import griddata
+                            GridPoints = np.column_stack([GridX.ravel(), GridY.ravel(), GridZ.ravel()])
+                            Points = np.column_stack([Group['TransformedX'], Group['TransformedY'], Group['TransformedZ']])
+                            Density = griddata(Points, Weights, GridPoints, method='nearest')
+                            Density = Density.reshape(GridX.shape)
+                        elif Fitting == "rbf":
+                            from scipy.interpolate import RBFInterpolator
+                            Points = np.column_stack([Group['TransformedX'], Group['TransformedY'], Group['TransformedZ']])
+                            rbf = RBFInterpolator(Points, Weights, kernel='multiquadric', epsilon=10000)
+                            Density = rbf(GridPoints)
+                            Density = Density.reshape(GridX.shape)
+                        elif Fitting == "griddata":
+                            from scipy.interpolate import griddata
+                            Points2D = np.column_stack([Group['TransformedX'], Group['TransformedY']])
+                            GridPoints2D = np.column_stack([GridX.ravel(), GridY.ravel()])
+
+                            Density = griddata(Points2D, Weights, GridPoints2D, method='cubic')
+                            Density = Density.reshape(GridX.shape)
                         # </editor-fold>
 
-                        # <editor-fold desc="Filter">
-                        Filtering = True
-                        if Filtering:
-                            # Filter out directions with positive x-component
-                            OriginalStack = np.column_stack([
-                                Group['TransformedX'].values,
-                                Group['TransformedY'].values,
-                                Group['TransformedZ'].values
-                            ])
-                            # print(OriginalStack)
+                        # print(X_proj, Y_proj, Density)
 
-                            Mask = OriginalStack[:, 1] >= 0
+                        fig, ax = plt.subplots(figsize=(8, 6))
+                        Title = "PoleFigureFitting" + "-" + Key + "-" + str(Temperature) + "-" + Potential + "-" + str(Based) + "-" + Fitting
+                        sc = ax.contourf(X_proj, Y_proj, Density, levels=100, cmap="jet")
+                        ax.scatter(Group["TransformedX"] / (1 + Group["TransformedZ"]),
+                                   Group["TransformedY"] / (1 + Group["TransformedZ"]),
+                                   color='k', s=20, alpha=1, zorder=10)
 
-                            # Apply mask to keep only valid vectors
-                            FilteredStack = OriginalStack[Mask]
+                        divider = make_axes_locatable(ax)
+                        cax = divider.append_axes("right", size="5%", pad=0.5)
+                        cbar = fig.colorbar(sc, cax=cax)
+                        cbar.set_label("TDE (eV)")
 
-                            # Also filter the corresponding rows in Group
-                            Group = Group[Mask].copy()
+                        cbar.locator = mticker.MaxNLocator(nbins=5, integer=True)
+                        cbar.update_ticks()
+                        cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.0f'))
 
-                            # Assign transformed values (same as original in this case)
-                            Group["TransformedX"] = FilteredStack[:, 0]
-                            Group["TransformedY"] = FilteredStack[:, 1]
-                            Group["TransformedZ"] = FilteredStack[:, 2]
-                        # </editor-fold>
+                        FontSize = 10
+                        Color = "black"
+                        FontWeight = "normal"
+                        ZOrder = 10
+                        Offset = 0.0
 
-                        # <editor-fold desc="Gridding">
-                        n_grid = 500#5000
-                        SectionMinDeg = 0
-                        SectionMaxDeg = 45
-                        SectionMinRad = np.deg2rad(SectionMinDeg)
-                        SectionMaxRad = np.deg2rad(SectionMaxDeg)
-                        GridSpacePhi = np.linspace(SectionMinRad, SectionMaxRad, n_grid)
-                        GridSpaceTheta = np.linspace(0, np.pi / 2, n_grid)
-                        MeshPhi, MeshTheta = np.meshgrid(GridSpacePhi, GridSpaceTheta)
-                        GridX = np.sin(MeshTheta) * np.cos(MeshPhi)
-                        GridY = np.sin(MeshTheta) * np.sin(MeshPhi)
-                        GridZ = np.cos(MeshTheta)
-                        X_proj = GridX / (1 + GridZ)
-                        Y_proj = GridY / (1 + GridZ)
-                        GridPoints = np.column_stack([GridX.ravel(), GridY.ravel(), GridZ.ravel()])
-                        # print(GridPoints)
-                        Weights = Group[Based].values
-                        # </editor-fold>
-
-                        # <editor-fold desc="Fitting">
-                        # print(list(Group))
-                        # print(Group[['Direction',"RotateX","RotateY","RotateZ", Based]])
-                        FittingList = ["nearest","rbf"]
-                        for Fitting in FittingList:
-                            print("Fitting")
-                            if Fitting == "Kde":
-                                KdeModel = KernelDensity(kernel='gaussian', bandwidth=0.1)
-                                KdeModel.fit(Vectors.data, sample_weight=Weights)
-                                log_density = KdeModel.score_samples(GridPoints)
-                                # print(log_density)
-                                Density = np.exp(log_density).reshape(GridX.shape)
-                                # print("Min Density:", np.min(Density))
-                                # print("Max Density:", np.max(Density))
-                                # print(Density)
-                            elif Fitting == "nearest":
-                                from scipy.interpolate import griddata
-                                GridPoints = np.column_stack([GridX.ravel(), GridY.ravel(), GridZ.ravel()])
-                                Points = np.column_stack([Group['TransformedX'], Group['TransformedY'], Group['TransformedZ']])
-                                Density = griddata(Points, Weights, GridPoints, method='nearest')
-                                Density = Density.reshape(GridX.shape)
-                            elif Fitting == "rbf":
-                                from scipy.interpolate import RBFInterpolator
-                                Points = np.column_stack([Group['TransformedX'], Group['TransformedY'], Group['TransformedZ']])
-                                rbf = RBFInterpolator(Points, Weights, kernel='multiquadric', epsilon=10000)
-                                Density = rbf(GridPoints)
-                                Density = Density.reshape(GridX.shape)
-                            elif Fitting == "griddata":
-                                from scipy.interpolate import griddata
-                                Points2D = np.column_stack([Group['TransformedX'], Group['TransformedY']])
-                                GridPoints2D = np.column_stack([GridX.ravel(), GridY.ravel()])
-
-                                Density = griddata(Points2D, Weights, GridPoints2D, method='cubic')
-                                Density = Density.reshape(GridX.shape)
-                            # </editor-fold>
-
-                            # print(X_proj, Y_proj, Density)
-
-                            fig, ax = plt.subplots(figsize=(8, 6))
-                            Title = "PoleFigureFitting" + "-" + Key + "-" + Potential + "-" + str(Based) + "-" + Fitting
-                            sc = ax.contourf(X_proj, Y_proj, Density, levels=100, cmap="jet")
-                            ax.scatter(Group["TransformedX"] / (1 + Group["TransformedZ"]),
-                                       Group["TransformedY"] / (1 + Group["TransformedZ"]),
-                                       color='k', s=20, alpha=1, zorder=10)
-
-                            divider = make_axes_locatable(ax)
-                            cax = divider.append_axes("right", size="5%", pad=0.5)
-                            cbar = fig.colorbar(sc, cax=cax)
-                            cbar.set_label("TDE (eV)")
-
-                            cbar.locator = mticker.MaxNLocator(nbins=5, integer=True)
-                            cbar.update_ticks()
-                            cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.0f'))
-
-                            FontSize = 10
-                            Color = "black"
-                            FontWeight = "normal"
-                            ZOrder = 10
-                            Offset = 0.0
-
-                            # <editor-fold desc="Annotation">
-                            Annotation = True
-                            if Annotation:
-                                AnnotationType = "Auto" # Manual
-                                if AnnotationType == "Manual":
-                                    Annotation = [
-                                        [-4 + Offset, 4 + Offset, 1 + Offset],  # [4, 4, 1]
-                                        [-3 + Offset, 4 + Offset, 2 + Offset],  # [4, 4, 1]
-                                        [-2 + Offset, 2 + Offset, 1 + Offset],  # [2, 2, 1]
-                                        [-2 + Offset, 3 + Offset, 0 + Offset],  # [3, 2, 0]
-                                        [-2 + Offset, 3 + Offset, 1 + Offset],  # [3, 2, 1]
-                                        [-2 + Offset, 4 + Offset, 1 + Offset],  # [4, 2, 1]
-                                        [-1 + Offset, 1 + Offset, 0 + Offset],  # [1, 1, 0]
-                                        [-1 + Offset, 1 + Offset, 1 + Offset],  # [1, 1, 0]
-                                        [-1 + Offset, 1 + Offset, 2 + Offset],  # [1, 1, 2]
-                                        [-1 + Offset, 2 + Offset, 0 + Offset],  # [2, 1, 0]
-                                        [-1 + Offset, 2 + Offset, 3 + Offset],  # [2, 1, 3]
-                                        [-1 + Offset, 3 + Offset, 1 + Offset],  # [3, 1, 1]
-                                        [-1 + Offset, 3 + Offset, 2 + Offset],  # [3, 1, 2]
-                                        # # [-1 + Offset, 3 + Offset, 5 + Offset],  # [3, 1, 5]
-                                        [-1 + Offset, 2 + Offset, 1 + Offset],  # [2, 1, 1]
-                                        [-1 + Offset, 2 + Offset, 2 + Offset],  # [2, 1, 2]
-                                        [-1 + Offset, 3 + Offset, 0 + Offset],  # [3, 1, 0]
-                                        [-1 + Offset, 3 + Offset, 3 + Offset],  # [-1, 2, 2]
-                                        [-1 + Offset, 4 + Offset, 0 + Offset],  # [4, 1, 0]
-                                        [0 + Offset, 0 + Offset, 1 + Offset],  # [0, 0, 1]
-                                        [0 + Offset, 1 + Offset, 0 + Offset],  # [0, 1, 0]
-                                        [0 + Offset, 1 + Offset, 1 + Offset],  # [1, 0, 1]
-                                        [0 + Offset, 1 + Offset, 2 + Offset],  # [1, 0, 2]
-                                        # # # [0 + Offset, 1 + Offset, 3 + Offset],  # [1, 0, 3]
-                                        [0 + Offset, 2 + Offset, 1 + Offset],  # [2, 0, 1]
-                                        [0 + Offset, 2 + Offset, 3 + Offset],  # [2, 0, 3]
-                                        [0 + Offset, 3 + Offset, 1 + Offset],  # [3, 0, 1]
-                                        [0 + Offset, 4 + Offset, 1 + Offset],  # [4, 0, 1]
-                                        [1 + Offset, 2 + Offset, 0 + Offset],  # [1, 2, 0]
-                                        [1 + Offset, 2 + Offset, 1 + Offset],  # [1, 2, 1]
-                                        # [1 + Offset, 3 + Offset, 0 + Offset],  # [3, 1, 0]
-                                        # [1 + Offset, 4 + Offset, 0 + Offset],  # [4, 1, 0]
-                                        # [1 + Offset, 4 + Offset, 1 + Offset],  # [1, 4, 1]
-                                        # [1 + Offset, 4 + Offset, 2 + Offset],  # [1, 4, 2]
-                                        # [1 + Offset, 4 + Offset, 3 + Offset],  # [1, 4, 3]
-                                        # [2 + Offset, 2 + Offset, 1 + Offset],  # [2, 2, 1]
-                                        # [2 + Offset, 2 + Offset, 3 + Offset],  # [2, 2, 3]
-                                        # [2 + Offset, 3 + Offset, 0 + Offset],  # [2, 3, 0]
-                                        # [2 + Offset, 3 + Offset, 1 + Offset],  # [2, 3, 1]
-                                        # [2 + Offset, 3 + Offset, 2 + Offset],  # [2, 3, 2]
-                                        [2 + Offset, 3 + Offset, 3 + Offset],  # [2, 3, 3]
-                                        # # # [3 + Offset, 0 + Offset, 1 + Offset],  # [3, 1, 0]
-                                        # # # [3 + Offset, 1 + Offset, 0 + Offset],  # [3, 1, 0]
-                                        # # [3 + Offset, 1 + Offset, 3 + Offset],  # [3, 4, 0]
-                                        [-3 + Offset, 4 + Offset, 0 + Offset],  # [4, 3, 0]
-                                        [-3 + Offset, 4 + Offset, 1 + Offset],  # [4, 3, 1]
-                                        [-3 + Offset, 4 + Offset, 2 + Offset],  # [4, 3, 2]
-                                        [-3 + Offset, 4 + Offset, 3 + Offset],  # [4, 3, 3]
-                                        ]
-                                elif AnnotationType =="Auto":
-                                    def AnnotationFunc(group_df, offset=0):
-                                        annotation = []
-
-                                        for _, row in group_df.iterrows():
-                                            x, y, z = int(row['X']), int(row['Y']), int(row['Z'])
-                                            annotation.append([x + offset, y + offset, z + offset])
-
-                                        return annotation
-
-
-                                    Annotation = AnnotationFunc(Group, Offset)
-
-                                if Reflection:
-                                    Annotation = [
-                                        MirrorMatrix @ np.array(vec) if vec[0] > 0 else np.array(vec)
-                                        for vec in Annotation
+                        # <editor-fold desc="Annotation">
+                        Annotation = True
+                        if Annotation:
+                            AnnotationType = "Auto" # Manual
+                            if AnnotationType == "Manual":
+                                Annotation = [
+                                    [-4 + Offset, 4 + Offset, 1 + Offset],  # [4, 4, 1]
+                                    [-3 + Offset, 4 + Offset, 2 + Offset],  # [4, 4, 1]
+                                    [-2 + Offset, 2 + Offset, 1 + Offset],  # [2, 2, 1]
+                                    [-2 + Offset, 3 + Offset, 0 + Offset],  # [3, 2, 0]
+                                    [-2 + Offset, 3 + Offset, 1 + Offset],  # [3, 2, 1]
+                                    [-2 + Offset, 4 + Offset, 1 + Offset],  # [4, 2, 1]
+                                    [-1 + Offset, 1 + Offset, 0 + Offset],  # [1, 1, 0]
+                                    [-1 + Offset, 1 + Offset, 1 + Offset],  # [1, 1, 0]
+                                    [-1 + Offset, 1 + Offset, 2 + Offset],  # [1, 1, 2]
+                                    [-1 + Offset, 2 + Offset, 0 + Offset],  # [2, 1, 0]
+                                    [-1 + Offset, 2 + Offset, 3 + Offset],  # [2, 1, 3]
+                                    [-1 + Offset, 3 + Offset, 1 + Offset],  # [3, 1, 1]
+                                    [-1 + Offset, 3 + Offset, 2 + Offset],  # [3, 1, 2]
+                                    # # [-1 + Offset, 3 + Offset, 5 + Offset],  # [3, 1, 5]
+                                    [-1 + Offset, 2 + Offset, 1 + Offset],  # [2, 1, 1]
+                                    [-1 + Offset, 2 + Offset, 2 + Offset],  # [2, 1, 2]
+                                    [-1 + Offset, 3 + Offset, 0 + Offset],  # [3, 1, 0]
+                                    [-1 + Offset, 3 + Offset, 3 + Offset],  # [-1, 2, 2]
+                                    [-1 + Offset, 4 + Offset, 0 + Offset],  # [4, 1, 0]
+                                    [0 + Offset, 0 + Offset, 1 + Offset],  # [0, 0, 1]
+                                    [0 + Offset, 1 + Offset, 0 + Offset],  # [0, 1, 0]
+                                    [0 + Offset, 1 + Offset, 1 + Offset],  # [1, 0, 1]
+                                    [0 + Offset, 1 + Offset, 2 + Offset],  # [1, 0, 2]
+                                    # # # [0 + Offset, 1 + Offset, 3 + Offset],  # [1, 0, 3]
+                                    [0 + Offset, 2 + Offset, 1 + Offset],  # [2, 0, 1]
+                                    [0 + Offset, 2 + Offset, 3 + Offset],  # [2, 0, 3]
+                                    [0 + Offset, 3 + Offset, 1 + Offset],  # [3, 0, 1]
+                                    [0 + Offset, 4 + Offset, 1 + Offset],  # [4, 0, 1]
+                                    [1 + Offset, 2 + Offset, 0 + Offset],  # [1, 2, 0]
+                                    [1 + Offset, 2 + Offset, 1 + Offset],  # [1, 2, 1]
+                                    # [1 + Offset, 3 + Offset, 0 + Offset],  # [3, 1, 0]
+                                    # [1 + Offset, 4 + Offset, 0 + Offset],  # [4, 1, 0]
+                                    # [1 + Offset, 4 + Offset, 1 + Offset],  # [1, 4, 1]
+                                    # [1 + Offset, 4 + Offset, 2 + Offset],  # [1, 4, 2]
+                                    # [1 + Offset, 4 + Offset, 3 + Offset],  # [1, 4, 3]
+                                    # [2 + Offset, 2 + Offset, 1 + Offset],  # [2, 2, 1]
+                                    # [2 + Offset, 2 + Offset, 3 + Offset],  # [2, 2, 3]
+                                    # [2 + Offset, 3 + Offset, 0 + Offset],  # [2, 3, 0]
+                                    # [2 + Offset, 3 + Offset, 1 + Offset],  # [2, 3, 1]
+                                    # [2 + Offset, 3 + Offset, 2 + Offset],  # [2, 3, 2]
+                                    [2 + Offset, 3 + Offset, 3 + Offset],  # [2, 3, 3]
+                                    # # # [3 + Offset, 0 + Offset, 1 + Offset],  # [3, 1, 0]
+                                    # # # [3 + Offset, 1 + Offset, 0 + Offset],  # [3, 1, 0]
+                                    # # [3 + Offset, 1 + Offset, 3 + Offset],  # [3, 4, 0]
+                                    [-3 + Offset, 4 + Offset, 0 + Offset],  # [4, 3, 0]
+                                    [-3 + Offset, 4 + Offset, 1 + Offset],  # [4, 3, 1]
+                                    [-3 + Offset, 4 + Offset, 2 + Offset],  # [4, 3, 2]
+                                    [-3 + Offset, 4 + Offset, 3 + Offset],  # [4, 3, 3]
                                     ]
+                            elif AnnotationType =="Auto":
+                                def AnnotationFunc(group_df, offset=0):
+                                    annotation = []
 
-                                if Rotating:
-                                    Annotation = [RotationMatrix @ vec for vec in Annotation]
-                                # print(Annotation)
-                                for vec in Annotation:
-                                    vec = np.array(vec)
-                                    unit_vec = vec / np.linalg.norm(vec)
-                                    rounded = np.round(vec).astype(int)
+                                    for _, row in group_df.iterrows():
+                                        x, y, z = int(row['X']), int(row['Y']), int(row['Z'])
+                                        annotation.append([x + offset, y + offset, z + offset])
 
-                                    Symmerty = "4/mmm"
-                                    if str(Symmerty) in ["1", "4/mmm"]:  # Miller
-                                        label = r'$[' + ''.join(
-                                            f'\\overline{{{abs(i)}}}' if i < 0 else str(i)
-                                            for i in rounded
-                                        ) + ']$'
-                                    elif str(Symmerty) == "6/mmm":  # MillerBravis
-                                        label = format_bravais_label(rounded)
-                                        # print(vec, label)
+                                    return annotation
 
-                                    # xy = ax._projection.vector2xy(Vector3d(unit_vec))
-                                    # x, y = unit_vec[0], unit_vec[1]  # project to XY plane
-                                    x = unit_vec[0] / (1 + unit_vec[2])
-                                    y = unit_vec[1] / (1 + unit_vec[2])
-                                    import matplotlib.patheffects as pe
 
-                                    ax.annotate(
-                                        label,
-                                        xy=(x, y),
-                                        fontsize=FontSize,
-                                        color=Color,
-                                        ha='center',
-                                        va='center',
-                                        fontweight='bold',
-                                        zorder=ZOrder,
-                                        path_effects=[
-                                            pe.withStroke(linewidth=3, foreground='white')
-                                        ]
-                                    )
-                            # </editor-fold>
+                                Annotation = AnnotationFunc(Group, Offset)
 
-                            ax.set_aspect("equal")
-                            ax.axis("off")
+                            if Reflection:
+                                Annotation = [
+                                    MirrorMatrix @ np.array(vec) if vec[0] > 0 else np.array(vec)
+                                    for vec in Annotation
+                                ]
 
-                            if Potential == "M2R" and  Fitting == "nearest":
-                                fig.suptitle("Nearest", fontsize=18, y=0.9)
-                            elif Potential == "M2R" and  Fitting == "rbf":
-                                fig.suptitle("RBF", fontsize=18, y=0.9)
+                            if Rotating:
+                                Annotation = [RotationMatrix @ vec for vec in Annotation]
+                            # print(Annotation)
+                            for vec in Annotation:
+                                vec = np.array(vec)
+                                unit_vec = vec / np.linalg.norm(vec)
+                                rounded = np.round(vec).astype(int)
 
-                            fig.suptitle(f"({LetterLabels[LabelCounter]})", fontsize=18, x=0.05, y=0.775)
+                                Symmerty = "4/mmm"
+                                if str(Symmerty) in ["1", "4/mmm"]:  # Miller
+                                    label = r'$[' + ''.join(
+                                        f'\\overline{{{abs(i)}}}' if i < 0 else str(i)
+                                        for i in rounded
+                                    ) + ']$'
+                                elif str(Symmerty) == "6/mmm":  # MillerBravis
+                                    label = format_bravais_label(rounded)
+                                    # print(vec, label)
 
-                            # fig.suptitle(f"({LetterLabels[LabelCounter]}): {Potential}", fontsize=18, y=0.9)
-                            if Fitting == "nearest":
-                                fig.text(0.02, 0.5, Potential, va='center', ha='center', rotation=90)
+                                # xy = ax._projection.vector2xy(Vector3d(unit_vec))
+                                # x, y = unit_vec[0], unit_vec[1]  # project to XY plane
+                                x = unit_vec[0] / (1 + unit_vec[2])
+                                y = unit_vec[1] / (1 + unit_vec[2])
+                                import matplotlib.patheffects as pe
 
-                            plt.tight_layout()
-                            # plt.show()
-                            plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight', transparent=True)
-                            plt.close()
-                            LabelCounter += 1
+                                ax.annotate(
+                                    label,
+                                    xy=(x, y),
+                                    fontsize=FontSize,
+                                    color=Color,
+                                    ha='center',
+                                    va='center',
+                                    fontweight='bold',
+                                    zorder=ZOrder,
+                                    path_effects=[
+                                        pe.withStroke(linewidth=3, foreground='white')
+                                    ]
+                                )
+                        # </editor-fold>
+
+                        ax.set_aspect("equal")
+                        ax.axis("off")
+
+                        if Potential == "M2R" and  Fitting == "nearest":
+                            fig.suptitle("Nearest", fontsize=18, y=0.9)
+                        elif Potential == "M2R" and  Fitting == "rbf":
+                            fig.suptitle("RBF", fontsize=18, y=0.9)
+
+                        fig.suptitle(f"({LetterLabels[LabelCounter]})", fontsize=18, x=0.05, y=0.775)
+
+                        # fig.suptitle(f"({LetterLabels[LabelCounter]}): {Potential}", fontsize=18, y=0.9)
+                        # if Fitting == "nearest":
+                        #     fig.text(0.02, 0.5, f"T={Temperature} {Potential}", va='center', ha='center', rotation=90)
+
+                        plt.tight_layout()
+                        # plt.show()
+                        plt.savefig(PythonName + "-" + Title, dpi=600, bbox_inches='tight', transparent=True)
+                        plt.close()
+                        LabelCounter += 1
             # </editor-fold>
 
 # <editor-fold desc="***** Plot-inverse pole figures-Yu">
@@ -3955,6 +4764,7 @@ if Active:
     plt.show()
 # </editor-fold>
 # </editor-fold>
+
 
 # </editor-fold>
 
